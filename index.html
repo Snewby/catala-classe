@@ -25,6 +25,8 @@ input{font-family:inherit}
 .nav button span:first-child{font-size:22px;transition:transform .3s}
 .nav button.active span:first-child{transform:scale(1.1)}
 .nav button span:last-child{font-size:11px;font-weight:600}
+.btn{padding:10px 20px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn:hover{background:#f5f5f5;transform:translateY(-1px)}
 /* Flashcards */
 .flashcard-container{position:relative;touch-action:pan-y}
 .flashcard-main{background:#fff;border-radius:20px;padding:40px 24px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:20px;border-top:3px solid var(--lesson-color);min-height:320px;display:flex;flex-direction:column;justify-content:center;transition:transform .3s}
@@ -42,6 +44,9 @@ input{font-family:inherit}
 .vocab-header{padding:20px 16px;background:linear-gradient(135deg,#FF6B6B 0%,#4ECDC4 100%);color:#fff}
 .vocab-header h1{font-size:28px;margin-bottom:6px}
 .vocab-header p{font-size:14px;opacity:.9}
+.vocab-mode-toggle{display:flex;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid #eee}
+.vocab-mode-toggle button{flex:1;padding:10px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:14px;font-weight:600;transition:all .2s}
+.vocab-mode-toggle button.active{background:linear-gradient(135deg,#FF6B6B 0%,#4ECDC4 100%);color:#fff;border-color:transparent}
 .vocab-search{padding:12px 16px;background:#fff;border-bottom:1px solid #eee}
 .vocab-search-input{width:100%;padding:10px 16px;border:1px solid #ddd;border-radius:24px;font-size:14px;background:#f8f8f8}
 .vocab-search-input:focus{outline:none;border-color:#4ECDC4;background:#fff}
@@ -69,6 +74,24 @@ input{font-family:inherit}
 .vocab-modal-img-container{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:20px}
 .vocab-modal-img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .3s;transform-origin:center center;touch-action:none}
 .vocab-modal-footer{padding:16px;background:rgba(250,249,247,.95);backdrop-filter:blur(12px);text-align:center;font-size:11px;color:#999}
+/* Text Vocabulary List */
+.vocab-text-list{padding:0 16px 16px}
+.vocab-text-item{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,.06);cursor:pointer;transition:all .2s}
+.vocab-text-item:hover{transform:translateX(4px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.vocab-text-item:active{transform:scale(.98)}
+.vocab-text-catalan{font-size:16px;font-weight:700;color:#333;margin-bottom:4px}
+.vocab-text-english{font-size:14px;color:#666}
+.vocab-text-stats{padding:16px;text-align:center;color:#999;font-size:13px;margin-top:10px}
+.vocab-flashcard-mode{padding:16px}
+.vocab-flashcard{background:#fff;border-radius:20px;padding:60px 20px;text-align:center;min-height:300px;display:flex;flex-direction:column;justify-content:center;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.08);margin-bottom:20px;cursor:pointer;user-select:none;position:relative}
+.vocab-flashcard-text{font-size:24px;font-weight:700;color:#333}
+.vocab-flashcard-hint{position:absolute;bottom:20px;font-size:12px;color:#999}
+.vocab-flashcard-controls{display:flex;gap:10px;justify-content:center}
+.vocab-flashcard-btn{padding:12px 24px;border-radius:24px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.vocab-flashcard-btn.know{background:#4CAF50;color:#fff}
+.vocab-flashcard-btn.learn{background:#FF9800;color:#fff}
+.vocab-flashcard-btn:hover{transform:scale(1.05)}
+.vocab-text-empty{text-align:center;padding:40px;color:#999}
 
 /* Verbs */
 .verb-header{display:flex;align-items:center;gap:10px;padding:12px 0;margin-bottom:12px}
@@ -267,8 +290,11 @@ function $(tag,attr,kids){var el=document.createElement(tag);if(attr){Object.key
 
 var screen="fitxes";
 var vocabSection="all";
+var vocabMode="visual"; // "visual" or "text"
 var vocabPage=null;
 var vocabScale=1;
+var textVocabShowing="front"; // "front" or "back" for flashcards
+var textVocabIndex=0;
 var selL=null;
 var fIdx=0;
 var qI=0;
@@ -429,54 +455,97 @@ else if(screen==="vocab"){
   // Header with gradient
   var header=$("div",{cls:"vocab-header"});
   header.appendChild($("h1",{cls:"serif"},"📖 Vocabulari"));
-  header.appendChild($("p",{},"58 pàgines il·lustrades"));
+  header.appendChild($("p",{},vocabMode==="visual"?"58 pàgines il·lustrades":"844 paraules i frases"));
   scr.appendChild(header);
+
+  // Mode toggle
+  var modeToggle=$("div",{cls:"vocab-mode-toggle"});
+  modeToggle.appendChild($("button",{cls:vocabMode==="visual"?"active":"",onclick:function(){vocabMode="visual";R();}},"🖼️ Visual"));
+  modeToggle.appendChild($("button",{cls:vocabMode==="text"?"active":"",onclick:function(){vocabMode="text";textVocabIndex=0;R();}},"📝 Text"));
+  scr.appendChild(modeToggle);
 
   // Search bar
   var searchContainer=$("div",{cls:"vocab-search"});
   var searchInput=$("input",{cls:"vocab-search-input",type:"text",placeholder:"🔍 Buscar vocabulari...",oninput:function(){
     var query=this.value.toLowerCase();
-    var cards=document.querySelectorAll('.vocab-card');
-    cards.forEach(function(card){
-      var title=card.querySelector('.vocab-card-title').textContent.toLowerCase();
-      var subtitle=card.querySelector('.vocab-card-subtitle').textContent.toLowerCase();
-      card.style.display=(title.includes(query)||subtitle.includes(query))?'block':'none';
-    });
+    if(vocabMode==="visual"){
+      var cards=document.querySelectorAll('.vocab-card');
+      cards.forEach(function(card){
+        var title=card.querySelector('.vocab-card-title').textContent.toLowerCase();
+        var subtitle=card.querySelector('.vocab-card-subtitle').textContent.toLowerCase();
+        card.style.display=(title.includes(query)||subtitle.includes(query))?'block':'none';
+      });
+    }else{
+      var items=document.querySelectorAll('.vocab-text-item');
+      items.forEach(function(item){
+        var catalan=item.querySelector('.vocab-text-catalan').textContent.toLowerCase();
+        var english=item.querySelector('.vocab-text-english').textContent.toLowerCase();
+        item.style.display=(catalan.includes(query)||english.includes(query))?'block':'none';
+      });
+    }
   }});
   searchContainer.appendChild(searchInput);
   scr.appendChild(searchContainer);
 
-  // Section filter with improved styling
-  var filter=$("div",{cls:"vocab-filter"});
-  [{id:"all",name:"Tots",icon:"📚"}].concat(typeof VOCAB_SECTIONS!=='undefined'?VOCAB_SECTIONS:[]).forEach(function(s){
-    filter.appendChild($("button",{cls:vocabSection===s.id?"active":"",onclick:function(){vocabSection=s.id;R();}},s.icon+" "+s.name));
-  });
-  scr.appendChild(filter);
+  if(vocabMode==="visual"){
+    // Section filter for visual mode
+    var filter=$("div",{cls:"vocab-filter"});
+    [{id:"all",name:"Tots",icon:"📚"}].concat(typeof VOCAB_SECTIONS!=='undefined'?VOCAB_SECTIONS:[]).forEach(function(s){
+      filter.appendChild($("button",{cls:vocabSection===s.id?"active":"",onclick:function(){vocabSection=s.id;R();}},s.icon+" "+s.name));
+    });
+    scr.appendChild(filter);
 
-  // Enhanced grid
-  var grid=$("div",{cls:"vocab-grid"});
-  var filtered=typeof VOCABULARI!=='undefined'?(vocabSection==="all"?VOCABULARI:VOCABULARI.filter(function(v){return v.section===vocabSection;})):[];
+    // Visual grid
+    var grid=$("div",{cls:"vocab-grid"});
+    var filtered=typeof VOCABULARI!=='undefined'?(vocabSection==="all"?VOCABULARI:VOCABULARI.filter(function(v){return v.section===vocabSection;})):[];
 
-  filtered.forEach(function(v,idx){
-    var card=$("div",{cls:"vocab-card",onclick:function(){vocabPage=v;screen="vocab-page";R();}});
+    filtered.forEach(function(v,idx){
+      var card=$("div",{cls:"vocab-card",onclick:function(){vocabPage=v;screen="vocab-page";R();}});
 
-    // Add badge for new items (first 5)
-    if(idx<5&&vocabSection==="all"){
-      card.innerHTML='<span class="vocab-card-badge">NOU</span>';
+      // Add badge for new items (first 5)
+      if(idx<5&&vocabSection==="all"){
+        card.innerHTML='<span class="vocab-card-badge">NOU</span>';
+      }
+
+      card.appendChild($("img",{cls:"vocab-card-img",src:v.img,alt:v.title}));
+      var body=$("div",{cls:"vocab-card-body"});
+      body.appendChild($("div",{cls:"vocab-card-title"},v.title));
+      body.appendChild($("div",{cls:"vocab-card-subtitle"},v.subtitle));
+      var footer=$("div",{cls:"vocab-card-footer"});
+      footer.appendChild($("span",{cls:"vocab-card-page"},"Pàg "+v.page));
+      footer.appendChild($("span",{cls:"vocab-card-icon"},v.icon||"📚"));
+      body.appendChild(footer);
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+    scr.appendChild(grid);
+  }else{
+    // Text vocabulary list
+    var listContainer=$("div",{cls:"vocab-text-list"});
+
+    // Check if TEXT_VOCABULARY exists
+    if(typeof TEXT_VOCABULARY!=='undefined'){
+      TEXT_VOCABULARY.forEach(function(item){
+        var vocabItem=$("div",{cls:"vocab-text-item",onclick:function(){
+          // Start flashcard mode with this word
+          textVocabIndex=TEXT_VOCABULARY.indexOf(item);
+          textVocabShowing="front";
+          screen="vocab-flashcard";
+          R();
+        }});
+        vocabItem.appendChild($("div",{cls:"vocab-text-catalan"},item.catalan));
+        vocabItem.appendChild($("div",{cls:"vocab-text-english"},item.english));
+        listContainer.appendChild(vocabItem);
+      });
+
+      // Stats
+      listContainer.appendChild($("div",{cls:"vocab-text-stats"},"Total: "+TEXT_VOCABULARY.length+" paraules"));
+    }else{
+      listContainer.appendChild($("div",{cls:"vocab-text-empty"},"Carregant vocabulari..."));
     }
 
-    card.appendChild($("img",{cls:"vocab-card-img",src:v.img,alt:v.title}));
-    var body=$("div",{cls:"vocab-card-body"});
-    body.appendChild($("div",{cls:"vocab-card-title"},v.title));
-    body.appendChild($("div",{cls:"vocab-card-subtitle"},v.subtitle));
-    var footer=$("div",{cls:"vocab-card-footer"});
-    footer.appendChild($("span",{cls:"vocab-card-page"},"Pàg "+v.page));
-    footer.appendChild($("span",{cls:"vocab-card-icon"},v.icon||"📚"));
-    body.appendChild(footer);
-    card.appendChild(body);
-    grid.appendChild(card);
-  });
-  scr.appendChild(grid);
+    scr.appendChild(listContainer);
+  }
 }
 
 else if(screen==="vocab-page"&&vocabPage){
@@ -681,6 +750,81 @@ else if(screen==="vocab-page"&&vocabPage){
   return; // Don't append nav for modal
 }
 
+else if(screen==="vocab-flashcard"){
+  // Flashcard mode for text vocabulary
+  var header=$("div",{cls:"vocab-header"});
+  header.appendChild($("h1",{cls:"serif"},"📖 Targetes de vocabulari"));
+  header.appendChild($("p",{},"Targeta "+(textVocabIndex+1)+" de "+TEXT_VOCABULARY.length));
+  scr.appendChild(header);
+
+  // Back button
+  var backBtn=$("button",{cls:"btn",style:"margin:16px;",onclick:function(){screen="vocab";R();}},"← Tornar a la llista");
+  scr.appendChild(backBtn);
+
+  var flashcardContainer=$("div",{cls:"vocab-flashcard-mode"});
+
+  if(typeof TEXT_VOCABULARY!=='undefined' && TEXT_VOCABULARY[textVocabIndex]){
+    var currentItem=TEXT_VOCABULARY[textVocabIndex];
+
+    // Flashcard
+    var flashcard=$("div",{cls:"vocab-flashcard",onclick:function(){
+      textVocabShowing=textVocabShowing==="front"?"back":"front";
+      R();
+    }});
+
+    var text=$("div",{cls:"vocab-flashcard-text"},
+      textVocabShowing==="front"?currentItem.catalan:currentItem.english
+    );
+    flashcard.appendChild(text);
+
+    var hint=$("div",{cls:"vocab-flashcard-hint"},
+      textVocabShowing==="front"?"Toca per veure la traducció":"Toca per veure el català"
+    );
+    flashcard.appendChild(hint);
+
+    flashcardContainer.appendChild(flashcard);
+
+    // Controls
+    var controls=$("div",{cls:"vocab-flashcard-controls"});
+
+    if(textVocabIndex>0){
+      controls.appendChild($("button",{cls:"vocab-flashcard-btn",onclick:function(){
+        textVocabIndex--;
+        textVocabShowing="front";
+        R();
+      }},"← Anterior"));
+    }
+
+    controls.appendChild($("button",{cls:"vocab-flashcard-btn know",onclick:function(){
+      if(textVocabIndex<TEXT_VOCABULARY.length-1){
+        textVocabIndex++;
+        textVocabShowing="front";
+        R();
+      }else{
+        screen="vocab";
+        R();
+      }
+    }},"✓ Ho sé"));
+
+    if(textVocabIndex<TEXT_VOCABULARY.length-1){
+      controls.appendChild($("button",{cls:"vocab-flashcard-btn learn",onclick:function(){
+        textVocabIndex++;
+        textVocabShowing="front";
+        R();
+      }},"→ Següent"));
+    }else{
+      controls.appendChild($("button",{cls:"vocab-flashcard-btn",onclick:function(){
+        screen="vocab";
+        R();
+      }},"Finalitzar"));
+    }
+
+    flashcardContainer.appendChild(controls);
+  }
+
+  scr.appendChild(flashcardContainer);
+}
+
 else if(screen==="verbs"){
   // Use new VERB_DATA instead of old VERBS
   if(!window.VERB_DATA || VERB_DATA.length===0){
@@ -792,6 +936,7 @@ var nav=$("div",{cls:"nav"});
 R();
 </script>
 <script src="js/vocabulari-data.js"></script>
+<script src="js/text-vocabulary-data.js"></script>
 <script src="js/verb-conjugations.js"></script>
 <script>
 // Register service worker for PWA
