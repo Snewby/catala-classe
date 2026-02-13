@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#faf9f7">
 <title>Català A1.1</title>
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="android-icon-192x192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -98,7 +98,7 @@ var FREQ=[
 {c:"sempre",e:"always",p:100},{c:"gairebé sempre",e:"almost always",p:90},{c:"normalment",e:"normally",p:80},{c:"sovint",e:"often",p:70},{c:"de vegades",e:"sometimes",p:50},{c:"poques vegades",e:"rarely",p:30},{c:"gairebé mai",e:"almost never",p:10},{c:"mai",e:"never",p:0}
 ];
 
-function $(tag,attr,kids){var el=document.createElement(tag);if(attr){Object.keys(attr).forEach(function(k){if(k==="cls")el.className=attr[k];else if(k==="css")el.style.cssText=attr[k];else if(k==="html")el.innerHTML=attr[k];else if(k.startsWith("on"))el.addEventListener(k.slice(2),attr[k]);else el.setAttribute(k,attr[k]);});}if(kids){if(!Array.isArray(kids))kids=[kids];kids.forEach(function(c){if(typeof c==="string")el.appendChild(document.createTextNode(c));else el.appendChild(c);});}return el;}
+function $(tag,attr,kids){var el=document.createElement(tag);if(attr){Object.keys(attr).forEach(function(k){if(k==="cls")el.className=attr[k];else if(k==="css")el.style.cssText=attr[k];else if(k==="html")el.innerHTML=attr[k];else if(k.startsWith("on"))el.addEventListener(k.slice(2),attr[k]);else el.setAttribute(k,attr[k]);});}if(kids){if(!Array.isArray(kids))kids=[kids];kids.forEach(function(c){if(c===null||c===undefined)return;if(typeof c==="string")el.appendChild(document.createTextNode(c));else el.appendChild(c);});}return el;}
 
 var screen="home";
 var selL=null;
