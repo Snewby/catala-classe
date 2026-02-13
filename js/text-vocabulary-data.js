@@ -1,7 +1,7 @@
 // Text vocabulary data compiled from Easy Catalan Podcast episodes
 // Episodes: 197, 199, 200, 201, 202
 
-export const TEXT_VOCABULARY = [
+var TEXT_VOCABULARY = [
   { catalan: "a fondo", english: "thoroughly", id: 1 },
   { catalan: "a fora", english: "abroad", id: 2 },
   { catalan: "a l'hora", english: "on time", id: 3 },
