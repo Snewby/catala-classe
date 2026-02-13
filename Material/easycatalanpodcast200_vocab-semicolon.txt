@@ -1,0 +1,190 @@
+bon dia;good morning
+bona tarda;good afternoon
+bon vespre;good evening
+saludar;to greet
+estar recollit;to be included
+fer-se fosc;to get dark
+la tarda;afternoon
+el debat estèril;pointless debate
+l'aprenent (m);learner
+el matí;morning
+en canvi;on the other hand
+estar a favor;to be in favor of
+bona nit;good night
+acurat -ada;accurate
+l'hivern (m);winter
+demanar;to ask
+ordenar;to order
+el cosí;cousin
+votar;to vote
+fer gràcia;to find sth funny
+nominar;to nominate
+el premi;award
+l'espam (m);spam
+ignorar;to ignore
+cinquanta;fifty
+un parell;a pair
+confiar en;to trust in
+el vot;vote
+reconèixer;to recognize
+la tasca;work
+la defensa;defense
+la promoció;promotion
+el guanyador;winner
+la votació;vote
+sisplau;please
+fer-se conèixer;to make oneself known
+tothom;everyone
+a fora;abroad
+l'enllaç (m);link
+l'àudio (m);voice message
+fer feliç;to make happy
+l'oient (m);listener
+ensabonar;to flatter
+llarg -a;long
+valer la pena;to be worth it
+suplicar;to beg
+rebre;to receive
+la xerrada;talk
+el repte;challenge
+el milionari;millionaire
+finançar;to finance
+l'adreça (f);address
+la cançó;song
+omplir;to fill
+el propòsit;resolution
+tocar música;to play music
+doblar;to double
+la reforma;renovation
+arreglar;to fix
+la soldadura;welding
+el Campus d'Estiu;Summer Camp
+el viatge;trip
+el gos;dog
+la mitja marató;half marathon
+malauradament;unfortunately
+a mitjans de;in mid-[month]
+esdevenir;to become
+enumerar;to enumerate
+l'assaig (m);rehearsal
+el tall;audio clip
+animar-se a;to encourage oneself
+"L'estaca";song title
+estirar;to pull
+tombar;to fall down
+alliberar-se;to free oneself
+adormir (algú);to put (someone) to sleep
+la cançó de bressol;lullaby
+tallar;to interrupt
+esmentar;to mention
+altruista;altruistic
+la erra;R
+sonor -a;voiced
+sord -a;unvoiced
+l'any (m);year
+la a;A
+la ena;N
+la i grega;Y
+recordar;to remind
+a vegades;sometimes
+el juliol;July
+la reunió;meeting
+aviat;soon
+trist -a;sad
+suposadament;supposedly
+la tonteria;nonsense
+molta estona;a long time
+fer broma;to joke
+content -a;happy
+el pronom feble;weak pronoun
+el pronom;pronoun
+cap;any
+obligatori -òria;mandatory
+ser a temps de;to be on time for
+curt -a;short
+gairebé;almost
+l'objecte de valor (m);sentimental object
+triar;to choose
+anar just de temps;to be short on time
+endevinar;to guess
+la peça de roba;item of clothing
+la ratlla;stripe
+el dibuix;drawing
+el llamp;lightning
+blau blava;blue
+roig roja;red
+groc groga;yellow
+el logotip;logo
+el pam;span
+l'estiu (m);summer
+la tardor;autumn
+el buf;neck gaiter
+fer anys i panys;for years and years
+buidar;to empty
+l'armari (m);wardrobe
+vell -a;old
+més o menys;more or less
+fer lloc;to clear space
+fer il·lusió;to be exciting
+fer servir;to use
+fi fina;fine
+el mocador;handkerchief
+al voltant de;around
+el coll;neck
+el tub;tube
+tapar;to cover
+arronsar;to shrink
+el tallavents;windbreaker
+gruixut -uda;thick
+abrigar;to shelter
+encertar;to guess
+Una merda!;No way!
+provocar;to provoke
+la pista;hint
+el vidre;glass
+el tap;cap
+destruir;to destroy
+despistar;to confuse
+la bola de neu;snowball
+el paisatge;landscape
+entre cometes;quote unquote
+la neu;snow
+el foc;fire
+la beguda;drink
+l'ampolla (f);bottle
+el gel;ice
+la sorra;sand
+el desert;desert
+el Marroc;Morocco
+el trasto;junk
+el rasclet;rake
+què cony;what the heck
+robar;to steal
+destrossar;to destroy
+lladregot -a;thief
+menor;minor
+anar a nom d'algú;to be in someone’s name
+una mena de;a kind of
+la cuina;cuisine
+xulo -a;cool
+reutilitzar;to reuse
+mangar;to swipe
+greu;serious
+detenir;to arrest
+mare meva;oh my goodness
+déu-n'hi-do;OMG
+que fort;no way
+ara m'has matat;you've stumped me
+Saps què vull dir?;Do you know what I mean?
+ja t'entenc;I see
+l'edat (f);age
+la cosina;cousin
+la criatura;child
+el nòvio;boyfriend
+sortir amb;to date
+la paciència;patience
+la fidelitat;fidelity
+posar a disposició;to make available
+perdre's;to miss
+adeu;bye
+que vagi bé;take care
