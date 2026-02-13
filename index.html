@@ -437,12 +437,18 @@ else if(screen==="vocab-page"&&vocabPage){
 }
 
 else if(screen==="verbs"){
+  // Use new VERB_DATA instead of old VERBS
+  if(!window.VERB_DATA || VERB_DATA.length===0){
+    scr.appendChild($("div",{css:"padding:20px;text-align:center;color:#999"},"Loading verb data..."));
+    return;
+  }
+
   // Compact header with verb selector
   var headerContainer=$("div",{css:"display:flex;align-items:center;gap:12px;padding:12px 0;margin-bottom:8px"});
   headerContainer.appendChild($("span",{css:"font-size:20px"},"🔤"));
   var selector=$("select",{css:"flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-weight:600;color:#333;background:#fff"});
-  VERBS.forEach(function(v,i){
-    var opt=$("option",{value:i},v.v+" - "+v.en);
+  VERB_DATA.forEach(function(v,i){
+    var opt=$("option",{value:i},v.ca+" - "+v.fr);
     if(i===selectedVerb)opt.selected=true;
     selector.appendChild(opt);
   });
@@ -450,20 +456,21 @@ else if(screen==="verbs"){
   headerContainer.appendChild(selector);
   scr.appendChild(headerContainer);
 
-  var verb=VERBS[selectedVerb];
+  var verb=VERB_DATA[selectedVerb];
 
   // Tense tabs
   var tenseTabs=$("div",{css:"display:flex;gap:3px;overflow-x:auto;margin-bottom:12px;background:#f5f5f5;border-radius:10px;padding:3px"});
   TENSES.forEach(function(t){
-    if(!verb.tenses[t.id])return;
+    if(!verb.catalan || !verb.catalan[t.id])return;
     tenseTabs.appendChild($("button",{css:"padding:6px 12px;border-radius:7px;border:none;background:"+(gVTense===t.id?"#fff":"transparent")+";color:"+(gVTense===t.id?"#333":"#666")+";font-size:11px;white-space:nowrap;font-weight:600;flex-shrink:0;box-shadow:"+(gVTense===t.id?"0 1px 3px rgba(0,0,0,.1)":"none"),onclick:function(){gVTense=t.id;R();}},t.name));
   });
   scr.appendChild(tenseTabs);
 
   // Show conjugations for selected tense
   var tenseObj=TENSES.find(function(t){return t.id===gVTense;});
-  if(tenseObj&&verb.tenses[gVTense]){
-    var forms=verb.tenses[gVTense];
+  if(tenseObj && verb.catalan && verb.catalan[gVTense]){
+    var catalanForms=verb.catalan[gVTense];
+    var frenchForms=verb.french && verb.french[gVTense] || {};
     var conjugations=$("div",{css:"background:#fff;border-radius:12px;padding:16px;border:1px solid #eee"});
 
     // Add tense description with French equivalent
@@ -474,18 +481,19 @@ else if(screen==="verbs"){
     conjugations.appendChild($("div",{css:"display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:8px 16px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;font-size:11px;color:#999;font-weight:600"},[$("div",{css:"text-align:right"},"Pronom"),$("div",{},"Català"),$("div",{},"Français")]));
 
     // Add conjugations with French equivalents
-    conjugations.appendChild($("div",{css:"display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:10px 16px",html:Object.entries(forms).map(function(e){
-      var pronoun=e[0];
-      var form=e[1];
-      var frPronoun=PRONOUN_FR[pronoun]||pronoun;
-      var isIrregular=false;
-      // Check if irregular (simplified check - could be improved)
-      if(verb.t&&verb.t.includes("regular")===false){
-        isIrregular=true;
-      }
-      // Get French form (simplified - would need proper conjugation data)
-      var frForm=getFrenchForm(verb.fr,frPronoun,gVTense);
-      return'<div style="font-size:13px;color:#666;text-align:right">'+pronoun+'</div><div style="font-size:15px;font-weight:600;color:'+(isIrregular?"#C45B3A":"#2A7B5B")+'">'+form+'</div><div style="font-size:14px;color:#4A54C4">'+frForm+'</div>';
+    conjugations.appendChild($("div",{css:"display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:10px 16px",html:Object.entries(catalanForms).map(function(e){
+      var catalanPronoun=e[0];
+      var catalanForm=e[1];
+      var frenchPronoun=PRONOUN_MAP ? PRONOUN_MAP[catalanPronoun] : catalanPronoun;
+      var frenchForm=frenchForms[frenchPronoun] || "—";
+
+      // Check if irregular
+      var isIrregular=verb.type && !verb.type.includes("regular");
+
+      // Format French form with pronoun
+      var frenchDisplay=frenchPronoun+" "+frenchForm;
+
+      return'<div style="font-size:13px;color:#666;text-align:right">'+catalanPronoun+'</div><div style="font-size:15px;font-weight:600;color:'+(isIrregular?"#C45B3A":"#2A7B5B")+'">'+catalanForm+'</div><div style="font-size:14px;color:#4A54C4">'+frenchDisplay+'</div>';
     }).join("")}));
     scr.appendChild(conjugations);
   }
@@ -516,6 +524,7 @@ var nav=$("div",{cls:"nav"});
 R();
 </script>
 <script src="js/vocabulari-data.js"></script>
+<script src="js/verb-conjugations.js"></script>
 <script>
 // Register service worker for PWA
 if('serviceWorker' in navigator){
