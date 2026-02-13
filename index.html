@@ -114,7 +114,7 @@ function lsSave(){localStorage.setItem("catalaApp",JSON.stringify({selL:selL,fId
 function lsLoad(){try{var d=JSON.parse(localStorage.getItem("catalaApp"));if(d){selL=d.selL||null;fIdx=d.fIdx||0;qI=d.qI||0;qSc=d.qSc||0;gTab=d.gTab||"verbs";gVTense=d.gVTense||"pres";}}catch(e){}}
 lsLoad();
 
-function go(s){screen=s;if(s==="quiz"&&qI===0){var all=[];LESSONS.forEach(function(l){l.cards.forEach(function(c){all.push({lesson:l.title,q:c.ca,a:c.en});all.push({lesson:l.title,q:c.en,a:c.ca});});});qQs=all.sort(function(){return Math.random()-.5;}).slice(0,20);}R();lsSave();}
+function go(s){screen=s;if(s==="quiz"&&qI===0){var all=[];LESSONS.forEach(function(l){l.cards.forEach(function(c){all.push({lesson:l.title,q:c.ca,a:c.en});all.push({lesson:l.title,q:c.en,a:c.ca});});});qQs=all.sort(function(){return Math.random()-.5;}).slice(0,20);qQs.forEach(function(q){var wrongOpts=all.filter(function(x){return x.a!==q.a;}).sort(function(){return Math.random()-.5;}).slice(0,3).map(function(x){return x.a;});q.opts=[q.a].concat(wrongOpts).sort(function(){return Math.random()-.5;});});}R();lsSave();}
 
 function R(){
 var app=document.getElementById("app");
@@ -201,7 +201,7 @@ R();
 // Register service worker for PWA
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('sw.js').then(function(reg){
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function(reg){
       console.log('Service Worker registered');
     }).catch(function(err){
       console.log('Service Worker registration failed:',err);

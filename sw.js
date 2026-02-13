@@ -1,7 +1,7 @@
 const CACHE_NAME = 'catala-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
+  './',
+  './index.html',
   'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Sans+3:wght@300;400;600;700&display=swap'
 ];
 

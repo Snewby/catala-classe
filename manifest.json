@@ -2,7 +2,7 @@
   "name": "Català A1.1",
   "short_name": "Català",
   "description": "Catalan language learning app - A1.1 basic course",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#faf9f7",
   "theme_color": "#faf9f7",
