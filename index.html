@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#faf9f7">
+<title>Català A1.1</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="android-icon-192x192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#faf9f7;font-family:'Source Sans 3',system-ui,sans-serif;overflow-x:hidden;color:#1a1a2e}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+::-webkit-scrollbar{display:none}
+.serif{font-family:'DM Serif Display',Georgia,serif}
+.app{max-width:420px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:80px}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:rgba(250,249,247,.95);backdrop-filter:blur(12px);border-top:1px solid #eee;display:flex;justify-content:space-around;padding:10px 0 20px;z-index:100}
+.nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px;opacity:.45;transition:opacity .2s}
+.nav button.active{opacity:1}
+.nav button span:first-child{font-size:20px}
+.nav button span:last-child{font-size:10px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+var LESSONS=[
+{id:1,title:"Saludacions",subtitle:"Greetings & Basics",icon:"👋",color:"#E85D3A",cards:[
+{ca:"Bon dia!",en:"Good morning! Hello!"},{ca:"Adéu!",en:"Bye!"},{ca:"Com va això?",en:"How's it going?"},{ca:"Bé!",en:"Good!"},{ca:"Vaig fent.",en:"As always."},{ca:"Malament.",en:"Bad."},{ca:"Què vol dir…?",en:"What does… mean?"},{ca:"No ho sé.",en:"I don't know."},{ca:"Ho pots repetir, si us plau?",en:"Can you repeat that, please?"},{ca:"(Moltes) gràcies!",en:"Thank you (very much)!"},{ca:"De res!",en:"You're welcome!"},{ca:"Ah, d'acord!",en:"Ah, I see."},{ca:"(Molt) bé!",en:"(Very) good!"},{ca:"Que vagi (molt) bé!",en:"All the best!"},{ca:"els deures",en:"homework"},{ca:"la classe de català",en:"the Catalan class"}]},
+{id:2,title:"L'alfabet",subtitle:"Alphabet & Sounds",icon:"🔤",color:"#2A7B5B",cards:[
+{ca:"ll → callar",en:"digraph: to be quiet"},{ca:"l·l → pel·lícula",en:"digraph: movie"},{ca:"ny → any",en:"digraph: year"},{ca:"rr → gerra",en:"digraph: jug"},{ca:"ss → terrassa",en:"digraph: terrace"},{ca:"ix → guix",en:"digraph: chalk"},{ca:"tx → cotxe",en:"digraph: car"},{ca:"tj → platja",en:"digraph: beach"},{ca:"tg → equipatge",en:"digraph: luggage"},{ca:"ç → cançó",en:"ce trencada: song"},{ca:"ç → feliç",en:"ce trencada: happy"},{ca:"ç → abraçada",en:"ce trencada: hug"}]},
+{id:3,title:"Presentar-se",subtitle:"Introductions",icon:"🤝",color:"#4A54C4",cards:[
+{ca:"Com et dius?",en:"What's your name?"},{ca:"Em dic…",en:"My name is…"},{ca:"Soc la Txell. / Soc en Manel.",en:"I'm Txell. / I'm Manel."},{ca:"D'on ets?",en:"Where are you from?"},{ca:"Soc de Lleida.",en:"I'm from Lleida."},{ca:"Quines llengües parles?",en:"What languages do you speak?"},{ca:"Parlo el català i el castellà.",en:"I speak Catalan and Spanish."},{ca:"Encantat/da de conèixer-te!",en:"Nice to meet you!"},{ca:"Bona tarda!",en:"Good afternoon!"},{ca:"Bon vespre!",en:"Good evening!"}]},
+{id:4,title:"Nacionalitats",subtitle:"Nationalities",icon:"🌍",color:"#C4A43A",cards:[
+{ca:"espanyol / espanyola",en:"Spanish"},{ca:"català / catalana",en:"Catalan"},{ca:"anglès / anglesa",en:"English"},{ca:"francès / francesa",en:"French"},{ca:"alemany / alemanya",en:"German"},{ca:"italià / italiana",en:"Italian"},{ca:"portuguès / portuguesa",en:"Portuguese"},{ca:"japonès / japonesa",en:"Japanese"},{ca:"xinès / xinesa",en:"Chinese"},{ca:"mexicà / mexicana",en:"Mexican"},{ca:"brasiler / brasilera",en:"Brazilian"},{ca:"estatunidenc / estatunidenca",en:"American"},{ca:"andorrà / andorrana",en:"Andorran"},{ca:"holandès / holandesa",en:"Dutch"},{ca:"romanès / romanesa",en:"Romanian"},{ca:"marroquí",en:"Moroccan"}]},
+{id:5,title:"Números",subtitle:"Numbers 0–100",icon:"🔢",color:"#8B3A8B",cards:[
+{ca:"zero",en:"0"},{ca:"un / una",en:"1"},{ca:"dos / dues",en:"2"},{ca:"tres",en:"3"},{ca:"quatre",en:"4"},{ca:"cinc",en:"5"},{ca:"sis",en:"6"},{ca:"set",en:"7"},{ca:"vuit",en:"8"},{ca:"nou",en:"9"},{ca:"deu",en:"10"},{ca:"onze",en:"11"},{ca:"dotze",en:"12"},{ca:"tretze",en:"13"},{ca:"catorze",en:"14"},{ca:"quinze",en:"15"},{ca:"setze",en:"16"},{ca:"disset",en:"17"},{ca:"divuit",en:"18"},{ca:"dinou",en:"19"},{ca:"vint",en:"20"},{ca:"vint-i-un",en:"21"},{ca:"trenta",en:"30"},{ca:"quaranta",en:"40"},{ca:"cinquanta",en:"50"},{ca:"seixanta",en:"60"},{ca:"setanta",en:"70"},{ca:"vuitanta",en:"80"},{ca:"noranta",en:"90"},{ca:"cent",en:"100"}]},
+{id:6,title:"La família",subtitle:"Family",icon:"👪",color:"#D4564A",cards:[
+{ca:"el pare / la mare",en:"father / mother"},{ca:"el germà / la germana",en:"brother / sister"},{ca:"el fill / la filla",en:"son / daughter"},{ca:"l'avi / l'àvia",en:"grandfather / grandmother"},{ca:"l'oncle / la tia",en:"uncle / aunt"},{ca:"el cosí / la cosina",en:"cousin (m/f)"},{ca:"el nebot / la neboda",en:"nephew / niece"},{ca:"el net / la neta",en:"grandson / granddaughter"},{ca:"el xicot / la xicota",en:"boyfriend / girlfriend"},{ca:"el marit / la muller",en:"husband / wife"},{ca:"el cunyat / la cunyada",en:"in-law (sibling)"},{ca:"el sogre / la sogra",en:"in-law (parent)"},{ca:"el gos / la gossa",en:"dog (m/f)"},{ca:"el gat / la gata",en:"cat (m/f)"}]},
+{id:7,title:"Professions",subtitle:"Jobs & Work",icon:"💼",color:"#2B6B8A",cards:[
+{ca:"el metge / la metgessa",en:"doctor"},{ca:"l'infermer / la infermera",en:"nurse"},{ca:"el mestre / la mestra",en:"teacher"},{ca:"el professor / la professora",en:"professor"},{ca:"el cuiner / la cuinera",en:"chef"},{ca:"el cambrer / la cambrera",en:"waiter/waitress"},{ca:"l'advocat / l'advocada",en:"lawyer"},{ca:"el/la policia",en:"police officer"},{ca:"el bomber / la bombera",en:"firefighter"},{ca:"el/la taxista",en:"taxi driver"},{ca:"el perruquer / la perruquera",en:"hairdresser"},{ca:"el pagès / la pagesa",en:"farmer"},{ca:"el periodista / la periodista",en:"journalist"},{ca:"l'arquitecte / l'arquitecta",en:"architect"}]},
+{id:8,title:"Caràcter",subtitle:"Personality",icon:"🎭",color:"#6B4A8B",cards:[
+{ca:"simpàtic/a ↔ antipàtic/a",en:"nice ↔ unfriendly"},{ca:"obert/a ↔ tancat/da",en:"open ↔ closed"},{ca:"tímid/a ↔ extravertit/da",en:"shy ↔ extroverted"},{ca:"treballador/a ↔ mandròs/osa",en:"hardworking ↔ lazy"},{ca:"generós/osa ↔ garrepa",en:"generous ↔ stingy"},{ca:"alegre ↔ trist/a",en:"happy ↔ sad"},{ca:"optimista ↔ pessimista",en:"optimist ↔ pessimist"},{ca:"amable ↔ hostil",en:"kind ↔ hostile"},{ca:"sincer/a ↔ mentider/a",en:"honest ↔ liar"},{ca:"valent/a ↔ poruc/ga",en:"brave ↔ cowardly"},{ca:"divertit/da ↔ avorrит/da",en:"fun ↔ boring"}]},
+{id:9,title:"Agradar",subtitle:"Likes & Dislikes",icon:"❤️",color:"#C44A7B",cards:[
+{ca:"M'agrada…",en:"I like…"},{ca:"M'encanta…",en:"I love…"},{ca:"No m'agrada…",en:"I don't like…"},{ca:"No m'agrada gens…",en:"I don't like…at all"},{ca:"A mi, també.",en:"Me too."},{ca:"A mi, tampoc.",en:"Me neither."},{ca:"A mi, no.",en:"Not me."},{ca:"A mi, sí.",en:"I do."},{ca:"moltíssim",en:"very very much"},{ca:"molt",en:"a lot"},{ca:"força / bastant",en:"quite / rather"},{ca:"poc",en:"a little"},{ca:"no…gaire",en:"not much"},{ca:"no…gens ni mica",en:"not at all"}]},
+{id:10,title:"Temps lliure",subtitle:"Free Time",icon:"🎨",color:"#3A8B5B",cards:[
+{ca:"escoltar música",en:"listen to music"},{ca:"llegir llibres",en:"read books"},{ca:"veure la tele",en:"watch TV"},{ca:"fer esport",en:"do sports"},{ca:"anar al cinema",en:"go to the cinema"},{ca:"cuinar",en:"cook"},{ca:"viatjar",en:"travel"},{ca:"anar de festa",en:"go partying"},{ca:"sortir amb amics",en:"go out with friends"},{ca:"jugar a videojocs",en:"play video games"},{ca:"córrer",en:"run"},{ca:"nedar",en:"swim"},{ca:"dibuixar",en:"draw"},{ca:"ballar",en:"dance"},{ca:"tocar un instrument",en:"play an instrument"}]},
+{id:11,title:"Dies i mesos",subtitle:"Days & Months",icon:"📅",color:"#5B8B8A",cards:[
+{ca:"dilluns",en:"Monday"},{ca:"dimarts",en:"Tuesday"},{ca:"dimecres",en:"Wednesday"},{ca:"dijous",en:"Thursday"},{ca:"divendres",en:"Friday"},{ca:"dissabte",en:"Saturday"},{ca:"diumenge",en:"Sunday"},{ca:"gener",en:"January"},{ca:"febrer",en:"February"},{ca:"març",en:"March"},{ca:"abril",en:"April"},{ca:"maig",en:"May"},{ca:"juny",en:"June"},{ca:"juliol",en:"July"},{ca:"agost",en:"August"},{ca:"setembre",en:"September"},{ca:"octubre",en:"October"},{ca:"novembre",en:"November"},{ca:"desembre",en:"December"}]},
+{id:12,title:"L'hora",subtitle:"Telling Time",icon:"🕐",color:"#8A5B3A",cards:[
+{ca:"Quina hora és?",en:"What time is it?"},{ca:"Són les dues.",en:"It's 2 o'clock."},{ca:"És la una.",en:"It's 1 o'clock."},{ca:"Són les tres i cinc.",en:"It's 3:05."},{ca:"Són les quatre i quart.",en:"It's 4:15."},{ca:"Són les cinc i mitja.",en:"It's 5:30."},{ca:"Són les sis menys quart.",en:"It's 5:45."},{ca:"Són dos quarts de set.",en:"It's 6:30."},{ca:"Són tres quarts de vuit.",en:"It's 7:45."},{ca:"És migdia.",en:"It's noon."},{ca:"És mitjanit.",en:"It's midnight."},{ca:"del matí",en:"in the morning (AM)"},{ca:"de la tarda",en:"in the afternoon (PM)"},{ca:"de la nit",en:"at night (PM)"},{ca:"A quina hora…?",en:"At what time…?"}]},
+{id:13,title:"Accions",subtitle:"Common Verbs",icon:"🏃",color:"#C45B3A",cards:[
+{ca:"caminar",en:"to walk"},{ca:"parlar",en:"to speak"},{ca:"menjar",en:"to eat"},{ca:"beure",en:"to drink"},{ca:"dormir",en:"to sleep"},{ca:"treballar",en:"to work"},{ca:"estudiar",en:"to study"},{ca:"viure",en:"to live"},{ca:"comprar",en:"to buy"},{ca:"vendre",en:"to sell"},{ca:"obrir",en:"to open"},{ca:"tancar",en:"to close"},{ca:"escriure",en:"to write"},{ca:"llegir",en:"to read"},{ca:"escoltar",en:"to listen"},{ca:"mirar",en:"to watch/look"},{ca:"pensar",en:"to think"},{ca:"saber",en:"to know (facts)"},{ca:"conèixer",en:"to know (people/places)"},{ca:"poder",en:"can/to be able to"}]},
+{id:14,title:"La ciutat",subtitle:"The City",icon:"🏙️",color:"#4A8B6B",cards:[
+{ca:"el carrer",en:"street"},{ca:"la plaça",en:"square"},{ca:"l'avinguda",en:"avenue"},{ca:"el parc",en:"park"},{ca:"la biblioteca",en:"library"},{ca:"el museu",en:"museum"},{ca:"el supermercat",en:"supermarket"},{ca:"la farmàcia",en:"pharmacy"},{ca:"l'hospital",en:"hospital"},{ca:"l'estació",en:"station"},{ca:"el metro",en:"metro"},{ca:"l'autobús",en:"bus"},{ca:"el taxi",en:"taxi"},{ca:"la bicicleta",en:"bicycle"},{ca:"la botiga",en:"shop"},{ca:"el restaurant",en:"restaurant"},{ca:"el cafè",en:"café"},{ca:"el banc",en:"bank"},{ca:"la universitat",en:"university"},{ca:"l'oficina de correus",en:"post office"}]},
+{id:15,title:"Colors",subtitle:"Colors",icon:"🌈",color:"#8B4A6B",cards:[
+{ca:"blanc/a",en:"white"},{ca:"negre/a",en:"black"},{ca:"gris/a",en:"grey"},{ca:"vermell/a",en:"red"},{ca:"taronja",en:"orange"},{ca:"groc/a",en:"yellow"},{ca:"verd/a",en:"green"},{ca:"blau/blava",en:"blue"},{ca:"lila",en:"purple"},{ca:"rosa",en:"pink"},{ca:"marró",en:"brown"},{ca:"daurat/da",en:"golden"},{ca:"platejat/da",en:"silver"},{ca:"clar/a",en:"light"},{ca:"fosc/a",en:"dark"}]}
+];
+
+var VERBS=[
+{v:"ser",en:"to be",t:"permanent",tenses:{pres:{jo:"soc",tu:"ets","ell/ella/vostè":"és",nosaltres:"som",vosaltres:"sou","ells/elles/vostès":"són"},imp:{jo:"era",tu:"eres","ell/ella/vostè":"era",nosaltres:"èrem",vosaltres:"èreu","ells/elles/vostès":"eren"},fut:{jo:"seré",tu:"seràs","ell/ella/vostè":"serà",nosaltres:"serem",vosaltres:"sereu","ells/elles/vostès":"seran"}}},
+{v:"estar",en:"to be",t:"temporary",tenses:{pres:{jo:"estic",tu:"estàs","ell/ella/vostè":"està",nosaltres:"estem",vosaltres:"esteu","ells/elles/vostès":"estan"},imp:{jo:"estava",tu:"estaves","ell/ella/vostè":"estava",nosaltres:"estàvem",vosaltres:"estàveu","ells/elles/vostès":"estaven"},fut:{jo:"estaré",tu:"estaràs","ell/ella/vostè":"estarà",nosaltres:"estarem",vosaltres:"estareu","ells/elles/vostès":"estaran"}}},
+{v:"haver",en:"to have",t:"auxiliary",tenses:{pres:{jo:"he",tu:"has","ell/ella/vostè":"ha",nosaltres:"hem",vosaltres:"heu","ells/elles/vostès":"han"},imp:{jo:"havia",tu:"havies","ell/ella/vostè":"havia",nosaltres:"havíem",vosaltres:"havíeu","ells/elles/vostès":"havien"},fut:{jo:"hauré",tu:"hauràs","ell/ella/vostè":"haurà",nosaltres:"haurem",vosaltres:"haureu","ells/elles/vostès":"hauran"}}},
+{v:"tenir",en:"to have",t:"possession",tenses:{pres:{jo:"tinc",tu:"tens","ell/ella/vostè":"té",nosaltres:"tenim",vosaltres:"teniu","ells/elles/vostès":"tenen"},imp:{jo:"tenia",tu:"tenies","ell/ella/vostè":"tenia",nosaltres:"teníem",vosaltres:"teníeu","ells/elles/vostès":"tenien"},fut:{jo:"tindré",tu:"tindràs","ell/ella/vostè":"tindrà",nosaltres:"tindrem",vosaltres:"tindreu","ells/elles/vostès":"tindran"}}},
+{v:"fer",en:"to do/make",t:"",tenses:{pres:{jo:"faig",tu:"fas","ell/ella/vostè":"fa",nosaltres:"fem",vosaltres:"feu","ells/elles/vostès":"fan"},imp:{jo:"feia",tu:"feies","ell/ella/vostè":"feia",nosaltres:"fèiem",vosaltres:"fèieu","ells/elles/vostès":"feien"},fut:{jo:"faré",tu:"faràs","ell/ella/vostè":"farà",nosaltres:"farem",vosaltres:"fareu","ells/elles/vostès":"faran"}}},
+{v:"anar",en:"to go",t:"",tenses:{pres:{jo:"vaig",tu:"vas","ell/ella/vostè":"va",nosaltres:"anem",vosaltres:"aneu","ells/elles/vostès":"van"},imp:{jo:"anava",tu:"anaves","ell/ella/vostè":"anava",nosaltres:"anàvem",vosaltres:"anàveu","ells/elles/vostès":"anaven"},fut:{jo:"aniré",tu:"aniràs","ell/ella/vostè":"anirà",nosaltres:"anirem",vosaltres:"anireu","ells/elles/vostès":"aniran"}}},
+{v:"dir",en:"to say/tell",t:"",tenses:{pres:{jo:"dic",tu:"dius","ell/ella/vostè":"diu",nosaltres:"diem",vosaltres:"dieu","ells/elles/vostès":"diuen"},imp:{jo:"deia",tu:"deies","ell/ella/vostè":"deia",nosaltres:"dèiem",vosaltres:"dèieu","ells/elles/vostès":"deien"},fut:{jo:"diré",tu:"diràs","ell/ella/vostè":"dirà",nosaltres:"direm",vosaltres:"direu","ells/elles/vostès":"diran"}}},
+{v:"venir",en:"to come",t:"",tenses:{pres:{jo:"vinc",tu:"véns","ell/ella/vostè":"ve/vé",nosaltres:"venim",vosaltres:"veniu","ells/elles/vostès":"venen"},imp:{jo:"venia",tu:"venies","ell/ella/vostè":"venia",nosaltres:"veníem",vosaltres:"veníeu","ells/elles/vostès":"venien"},fut:{jo:"vindré",tu:"vindràs","ell/ella/vostè":"vindrà",nosaltres:"vindrem",vosaltres:"vindreu","ells/elles/vostès":"vindran"}}},
+{v:"voler",en:"to want",t:"",tenses:{pres:{jo:"vull",tu:"vols","ell/ella/vostè":"vol",nosaltres:"volem",vosaltres:"voleu","ells/elles/vostès":"volen"},imp:{jo:"volia",tu:"volies","ell/ella/vostè":"volia",nosaltres:"volíem",vosaltres:"volíeu","ells/elles/vostès":"volien"},fut:{jo:"voldré",tu:"voldràs","ell/ella/vostè":"voldrà",nosaltres:"voldrem",vosaltres:"voldreu","ells/elles/vostès":"voldran"}}},
+{v:"poder",en:"can/to be able",t:"",tenses:{pres:{jo:"puc",tu:"pots","ell/ella/vostè":"pot",nosaltres:"podem",vosaltres:"podeu","ells/elles/vostès":"poden"},imp:{jo:"podia",tu:"podies","ell/ella/vostè":"podia",nosaltres:"podíem",vosaltres:"podíeu","ells/elles/vostès":"podien"},fut:{jo:"podré",tu:"podràs","ell/ella/vostè":"podrà",nosaltres:"podrem",vosaltres:"podreu","ells/elles/vostès":"podran"}}},
+{v:"saber",en:"to know",t:"",tenses:{pres:{jo:"sé",tu:"saps","ell/ella/vostè":"sap",nosaltres:"sabem",vosaltres:"sabeu","ells/elles/vostès":"saben"},imp:{jo:"sabia",tu:"sabies","ell/ella/vostè":"sabia",nosaltres:"sabíem",vosaltres:"sabíeu","ells/elles/vostès":"sabien"},fut:{jo:"sabré",tu:"sabràs","ell/ella/vostè":"sabrà",nosaltres:"sabrem",vosaltres:"sabreu","ells/elles/vostès":"sabran"}}},
+{v:"parlar",en:"to speak",t:"regular -ar",tenses:{pres:{jo:"parlo",tu:"parles","ell/ella/vostè":"parla",nosaltres:"parlem",vosaltres:"parleu","ells/elles/vostès":"parlen"},imp:{jo:"parlava",tu:"parlaves","ell/ella/vostè":"parlava",nosaltres:"parlàvem",vosaltres:"parlàveu","ells/elles/vostès":"parlaven"},fut:{jo:"parlaré",tu:"parlaràs","ell/ella/vostè":"parlarà",nosaltres:"parlarem",vosaltres:"parlareu","ells/elles/vostès":"parlaran"}}},
+{v:"menjar",en:"to eat",t:"regular -ar",tenses:{pres:{jo:"menjo",tu:"menges","ell/ella/vostè":"menja",nosaltres:"mengem",vosaltres:"mengeu","ells/elles/vostès":"mengen"},imp:{jo:"menjava",tu:"menjaves","ell/ella/vostè":"menjava",nosaltres:"menjàvem",vosaltres:"menjàveu","ells/elles/vostès":"menjaven"},fut:{jo:"menjaré",tu:"menjaràs","ell/ella/vostè":"menjarà",nosaltres:"menjarem",vosaltres:"menjareu","ells/elles/vostès":"menjaran"}}},
+{v:"aprendre",en:"to learn",t:"regular -re",tenses:{pres:{jo:"aprenc",tu:"aprens","ell/ella/vostè":"aprèn",nosaltres:"aprenem",vosaltres:"apreneu","ells/elles/vostès":"aprenen"},imp:{jo:"aprenia",tu:"aprenies","ell/ella/vostè":"aprenia",nosaltres:"apreníem",vosaltres:"apreníeu","ells/elles/vostès":"aprenien"},fut:{jo:"aprendré",tu:"aprendràs","ell/ella/vostè":"aprendrà",nosaltres:"aprendrem",vosaltres:"aprendreu","ells/elles/vostès":"aprendran"}}},
+{v:"viure",en:"to live",t:"regular -re",tenses:{pres:{jo:"visc",tu:"vius","ell/ella/vostè":"viu",nosaltres:"vivim",vosaltres:"viviu","ells/elles/vostès":"viuen"},imp:{jo:"vivia",tu:"vivies","ell/ella/vostè":"vivia",nosaltres:"vivíem",vosaltres:"vivíeu","ells/elles/vostès":"vivien"},fut:{jo:"viuré",tu:"viuràs","ell/ella/vostè":"viurà",nosaltres:"viurem",vosaltres:"viureu","ells/elles/vostès":"viuran"}}}
+];
+
+var TENSES=[
+{id:"pres",name:"Present",desc:"Actions happening now or habitually"},
+{id:"imp",name:"Imperfet",desc:"Past actions that were ongoing or habitual"},
+{id:"fut",name:"Futur",desc:"Actions that will happen"}
+];
+
+var POSS=[
+{p:"jo",f:["el meu","la meva","els meus","les meves"]},
+{p:"tu",f:["el teu","la teva","els teus","les teves"]},
+{p:"ell/ella/vostè",f:["el seu","la seva","els seus","les seves"]},
+{p:"nosaltres",f:["el nostre","la nostra","els nostres","les nostres"]},
+{p:"vosaltres",f:["el vostre","la vostra","els vostres","les vostres"]},
+{p:"ells/elles/vostès",f:["el seu","la seva","els seus","les seves"]}
+];
+
+var FREQ=[
+{c:"sempre",e:"always",p:100},{c:"gairebé sempre",e:"almost always",p:90},{c:"normalment",e:"normally",p:80},{c:"sovint",e:"often",p:70},{c:"de vegades",e:"sometimes",p:50},{c:"poques vegades",e:"rarely",p:30},{c:"gairebé mai",e:"almost never",p:10},{c:"mai",e:"never",p:0}
+];
+
+function $(tag,attr,kids){var el=document.createElement(tag);if(attr){Object.keys(attr).forEach(function(k){if(k==="cls")el.className=attr[k];else if(k==="css")el.style.cssText=attr[k];else if(k==="html")el.innerHTML=attr[k];else if(k.startsWith("on"))el.addEventListener(k.slice(2),attr[k]);else el.setAttribute(k,attr[k]);});}if(kids){if(!Array.isArray(kids))kids=[kids];kids.forEach(function(c){if(typeof c==="string")el.appendChild(document.createTextNode(c));else el.appendChild(c);});}return el;}
+
+var screen="home";
+var selL=null;
+var fIdx=0;
+var qI=0;
+var qSc=0;
+var qSel=null;
+var qQs=[];
+var gTab="verbs";
+var gVTense="pres";
+
+function lsSave(){localStorage.setItem("catalaApp",JSON.stringify({selL:selL,fIdx:fIdx,qI:qI,qSc:qSc,gTab:gTab,gVTense:gVTense}));}
+function lsLoad(){try{var d=JSON.parse(localStorage.getItem("catalaApp"));if(d){selL=d.selL||null;fIdx=d.fIdx||0;qI=d.qI||0;qSc=d.qSc||0;gTab=d.gTab||"verbs";gVTense=d.gVTense||"pres";}}catch(e){}}
+lsLoad();
+
+function go(s){screen=s;if(s==="quiz"&&qI===0){var all=[];LESSONS.forEach(function(l){l.cards.forEach(function(c){all.push({lesson:l.title,q:c.ca,a:c.en});all.push({lesson:l.title,q:c.en,a:c.ca});});});qQs=all.sort(function(){return Math.random()-.5;}).slice(0,20);}R();lsSave();}
+
+function R(){
+var app=document.getElementById("app");
+app.innerHTML="";
+var scr=$("div",{css:"padding:16px 16px 0"});
+
+if(screen==="home"){
+  scr.appendChild($("div",{css:"padding:8px 0 24px"},[$("div",{cls:"serif",css:"font-size:28px;letter-spacing:-.5px"},"Català"),$("div",{css:"font-size:13px;color:#888;margin-top:2px"},"A1.1 Curs Bàsic")]));
+  LESSONS.forEach(function(l){
+    var pct=0;if(selL===l.id){pct=Math.round((fIdx/(l.cards.length||1))*100);}
+    scr.appendChild($("div",{css:"background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-left:3px solid "+l.color,onclick:function(){selL=l.id;fIdx=0;go("verbs");lsSave();}},[$("div",{css:"display:flex;align-items:center;gap:10px;margin-bottom:4px"},[$("span",{css:"font-size:24px"},l.icon),$("div",{cls:"serif",css:"font-size:18px;flex:1"},l.title),$("div",{css:"font-size:11px;color:#999"},l.cards.length+" fitxes")]),$("div",{css:"font-size:12px;color:#666;margin-bottom:8px"},l.subtitle),pct>0?$("div",{css:"background:#f0f0f0;border-radius:4px;height:4px;overflow:hidden"},[$("div",{css:"width:"+pct+"%;background:"+l.color+";height:100%;border-radius:4px"})]):null]));
+  });
+}
+
+else if(screen==="verbs"){
+  if(selL===null){go("home");return;}
+  var l=LESSONS.find(function(x){return x.id===selL;});
+  scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[$("button",{css:"background:none;border:none;font-size:22px;color:#555",onclick:function(){selL=null;fIdx=0;go("home");lsSave();}},"\u2190"),$("div",{css:"flex:1"},[$("div",{cls:"serif",css:"font-size:18px"},l.icon+" "+l.title),$("div",{css:"font-size:11px;color:#888"},l.subtitle)]),$("div",{css:"font-size:12px;color:#999"},(fIdx+1)+" / "+l.cards.length)]));
+  var c=l.cards[fIdx];
+  scr.appendChild($("div",{css:"background:#fff;border-radius:20px;padding:40px 24px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:20px;border-top:3px solid "+l.color},[$("div",{cls:"serif",css:"font-size:32px;margin-bottom:20px;line-height:1.3;color:#1a1a2e"},c.ca),$("div",{css:"font-size:16px;color:#666"},c.en)]));
+  var ctrls=$("div",{css:"display:flex;gap:8px;margin-bottom:30px"});
+  ctrls.appendChild($("button",{css:"flex:1;padding:12px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:15px;font-weight:600;color:#555",onclick:function(){fIdx=Math.max(0,fIdx-1);R();lsSave();}},"\u2190 Enrere"));
+  ctrls.appendChild($("button",{css:"flex:1;padding:12px;border-radius:12px;border:none;background:"+l.color+";font-size:15px;font-weight:600;color:#fff",onclick:function(){fIdx=Math.min(l.cards.length-1,fIdx+1);R();lsSave();}},"Següent \u2192"));
+  scr.appendChild(ctrls);
+  var grid=$("div",{css:"display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px"});
+  for(var i=0;i<l.cards.length;i++){
+    (function(idx){
+      var active=idx===fIdx;
+      grid.appendChild($("div",{css:"aspect-ratio:1;border-radius:10px;border:"+(active?"2px solid "+l.color:"1px solid #ddd")+";background:"+(active?l.color:"#fff")+";display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:"+(active?"#fff":"#888"),onclick:function(){fIdx=idx;R();lsSave();}},""+(idx+1)));
+    })(i);
+  }
+  scr.appendChild(grid);
+}
+
+else if(screen==="quiz"){
+  scr.appendChild($("div",{cls:"serif",css:"font-size:24px;margin-bottom:8px"},"\u26A1 Quiz"));
+  scr.appendChild($("div",{css:"font-size:13px;color:#888;margin-bottom:20px"},"Puntuació: "+qSc+" / "+qI+" (" +(qI>0?Math.round((qSc/qI)*100):0)+"%)" ));
+  if(qI>=qQs.length){
+    scr.appendChild($("div",{css:"background:#E8F5E9;border-radius:16px;padding:40px 20px;text-align:center;margin-bottom:20px"},[$("div",{css:"font-size:56px;margin-bottom:12px"},"\u{1F389}"),$("div",{cls:"serif",css:"font-size:24px;margin-bottom:8px"},"Finalitzat!"),$("div",{css:"font-size:16px;color:#555"},"Puntuació final: "+qSc+" / "+qQs.length+" ("+Math.round((qSc/qQs.length)*100)+"%)"),$("button",{css:"margin-top:20px;padding:12px 24px;border-radius:12px;border:none;background:#2A7B5B;color:#fff;font-size:15px;font-weight:600",onclick:function(){qI=0;qSc=0;qSel=null;go("quiz");}},"Tornar a començar")]));
+  }else{
+    var q=qQs[qI];
+    scr.appendChild($("div",{css:"background:#fff;border-radius:16px;padding:28px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:20px"},[$("div",{css:"font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"},q.lesson),$("div",{cls:"serif",css:"font-size:24px"},q.q)]));
+    q.opts.forEach(function(o){var isA=o===q.a,isS=qSel===o,bg="#fff",bc="#eee";if(qSel!==null){if(isA){bg="#E8F5E9";bc="#4CAF50";}else if(isS){bg="#FFEBEE";bc="#f44336";}}
+      scr.appendChild($("button",{css:"padding:14px 18px;border-radius:12px;border:1.5px solid "+bc+";background:"+bg+";font-size:15px;text-align:left;width:100%;margin-bottom:10px;transition:all .2s;color:#1a1a2e",onclick:function(){if(qSel!==null)return;qSel=o;if(o===q.a)qSc++;R();setTimeout(function(){qSel=null;qI++;R();window.scrollTo(0,0);},1200);}},o));});}
+}
+
+else if(screen==="gram"){
+  scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[$("button",{css:"background:none;border:none;font-size:22px;color:#555",onclick:function(){go("home");}},"\u2190"),$("div",{cls:"serif",css:"font-size:18px"},"📖 Gramàtica")]));
+  var tabs=$("div",{css:"display:flex;gap:6px;overflow-x:auto;margin-bottom:16px"});
+  [{id:"verbs",l:"Verbs"},{id:"poss",l:"Possessius"},{id:"freq",l:"Freqüència"},{id:"art",l:"Articles"}].forEach(function(t){
+    tabs.appendChild($("button",{css:"padding:8px 14px;border-radius:20px;border:"+(gTab===t.id?"none":"1px solid #ddd")+";background:"+(gTab===t.id?"#2A7B5B":"#fff")+";color:"+(gTab===t.id?"#fff":"#555")+";font-size:13px;white-space:nowrap;font-weight:600;flex-shrink:0",onclick:function(){gTab=t.id;R();}},t.l));
+  });scr.appendChild(tabs);
+  if(gTab==="verbs"){
+    var gttabs=$("div",{css:"display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px"});
+    TENSES.forEach(function(t){
+      gttabs.appendChild($("button",{css:"padding:6px 11px;border-radius:14px;border:"+(gVTense===t.id?"none":"1px solid #ddd")+";background:"+(gVTense===t.id?"#4A54C4":"#fff")+";color:"+(gVTense===t.id?"#fff":"#555")+";font-size:11px;white-space:nowrap;font-weight:600;flex-shrink:0",onclick:function(){gVTense=t.id;R();}},t.name));
+    });
+    scr.appendChild(gttabs);
+    var gTenseObj=TENSES.find(function(t){return t.id===gVTense;});
+    scr.appendChild($("div",{css:"font-size:11px;color:#888;margin-bottom:12px;font-style:italic"},gTenseObj.desc));
+    VERBS.forEach(function(v){
+      var forms=v.tenses[gVTense];
+      scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee;margin-bottom:14px"},[$("div",{css:"display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"},[$("div",{cls:"serif",css:"font-size:18px"},v.v),$("div",{css:"font-size:11px;color:#999"},v.en)]),$("div",{css:"display:grid;grid-template-columns:1fr 1fr;gap:4px 16px",html:Object.entries(forms).map(function(e){return'<div style="font-size:13px;padding:3px 0"><span style="color:#999">'+e[0]+' </span><span style="font-weight:600">'+e[1]+'</span></div>';}).join("")}),$("div",{css:"font-size:10px;color:#4A54C4;margin-top:6px;font-style:italic"},v.t)]));
+    });
+  }
+  if(gTab==="poss")scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee"},[$("div",{cls:"serif",css:"font-size:16px;margin-bottom:12px"},"Els possessius"),$("div",{css:"display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px",html:'<div style="font-weight:700;color:#666">Pronom</div><div style="font-weight:700;color:#666">m.sg · f.sg · m.pl · f.pl</div>'+POSS.map(function(p){return'<div style="color:#4A54C4;font-weight:600">'+p.p+'</div><div style="color:#333">'+p.f.join(" · ")+'</div>';}).join("")}),$("div",{css:"margin-top:14px;padding:10px 14px;background:#FFF8E1;border-radius:10px;font-size:12px;color:#795548;line-height:1.5",html:'<b>Exemple:</b> Aquesta és <em>la meva</em> família. <em>El meu</em> germà es diu Oriol.'})]));
+  if(gTab==="freq")scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee",html:'<div class="serif" style="font-size:16px;margin-bottom:14px">Adverbis de freqüència</div>'+FREQ.map(function(a){return'<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div style="width:100px;flex-shrink:0"><div style="background:#e8e8e8;border-radius:4px;height:8px;overflow:hidden"><div style="width:'+a.p+'%;height:100%;background:hsl('+(a.p*1.2)+',60%,50%);border-radius:4px"></div></div></div><div style="font-size:14px"><span style="font-weight:600">'+a.c+'</span> <span style="color:#999">('+a.e+')</span></div></div>';}).join("")}));
+  if(gTab==="art"){
+    scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee;margin-bottom:14px",html:'<div class="serif" style="font-size:16px;margin-bottom:10px">L\'article definit</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;text-align:center;font-size:14px"><div style="font-weight:700;color:#666"></div><div style="font-weight:700;color:#666">Masc.</div><div style="font-weight:700;color:#666">Fem.</div><div style="color:#999">Sg.</div><div style="font-weight:600">el (l\')</div><div style="font-weight:600">la (l\')</div><div style="color:#999">Pl.</div><div style="font-weight:600">els</div><div style="font-weight:600">les</div></div>'}));
+    scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee;margin-bottom:14px",html:'<div class="serif" style="font-size:16px;margin-bottom:10px">Article personal</div><div style="font-size:13px;line-height:1.8"><div><span style="color:#999">home + consonant →</span> <b>el / en</b> Manel</div><div><span style="color:#999">home + vocal →</span> <b>l\'</b>Andreu</div><div><span style="color:#999">dona + consonant →</span> <b>la</b> Txell</div><div><span style="color:#999">dona + vocal →</span> <b>l\'</b>Anna</div></div>'}));
+    scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee;margin-bottom:14px",html:'<div class="serif" style="font-size:16px;margin-bottom:10px">"de" + article</div><div style="font-size:13px;line-height:1.8"><b>de</b> → Lleida<br><b>d\'</b> → Andorra<br><b>del</b> (de+el) → del Marroc<br><b>de l\'</b> → de l\'Argentina<br><b>de la</b> → de la República Txeca<br><b>dels</b> (de+els) → dels Estats Units<br><b>de les</b> → de les Illes Balears</div>'}));
+    scr.appendChild($("div",{css:"background:#FFF8E1;border-radius:14px;padding:16px;border:1px solid #FFF0C0;margin-bottom:14px",html:'<div class="serif" style="font-size:14px;margin-bottom:8px;color:#795548">⚠️ Apostrophe rule</div><div style="font-size:12px;color:#795548;line-height:1.6">Feminine words starting with unstressed <b>hi-, i-, hu-, u-</b> do NOT apostrophize!<br><em>la història, la universitat, la illeta, la unitat</em></div>'}));
+  }
+}
+
+app.appendChild(scr);
+var nav=$("div",{cls:"nav"});
+[{id:"home",ic:"🏠",l:"Inici"},{id:"quiz",ic:"⚡",l:"Quiz"},{id:"verbs",ic:"📝",l:"Verbs"},{id:"gram",ic:"📖",l:"Gramàtica"}].forEach(function(it){
+  nav.appendChild($("button",{cls:screen===it.id?"active":"",onclick:function(){go(it.id);}},[$("span",{},it.ic),$("span",{},it.l)]));
+});app.appendChild(nav);
+}
+R();
+
+// Register service worker for PWA
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      console.log('Service Worker registered');
+    }).catch(function(err){
+      console.log('Service Worker registration failed:',err);
+    });
+  });
+}
+</script>
+</body>
+</html>
