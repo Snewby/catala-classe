@@ -220,6 +220,12 @@ else if(screen==="vocab"){
 }
 
 else if(screen==="vocab-page"&&vocabPage){
+  // Remove any existing modals first
+  var existingModal=document.querySelector('.vocab-modal');
+  if(existingModal){
+    existingModal.remove();
+  }
+
   var modal=document.createElement('div');
   modal.className='vocab-modal show';
 
@@ -228,7 +234,11 @@ else if(screen==="vocab-page"&&vocabPage){
   var closeBtn=document.createElement('button');
   closeBtn.className='vocab-modal-close';
   closeBtn.textContent='←';
-  closeBtn.onclick=function(){screen='vocab';R();};
+  closeBtn.onclick=function(){
+    modal.remove();
+    screen='vocab';
+    R();
+  };
   var titleDiv=document.createElement('div');
   titleDiv.className='vocab-modal-title';
   titleDiv.textContent=vocabPage.title;
@@ -301,10 +311,12 @@ else if(screen==="vocab-page"&&vocabPage){
         if(diff>0 && currentIndex<filtered.length-1){
           // Swipe left - next page
           vocabPage=filtered[currentIndex+1];
+          modal.remove();
           R();
         }else if(diff<0 && currentIndex>0){
           // Swipe right - previous page
           vocabPage=filtered[currentIndex-1];
+          modal.remove();
           R();
         }
       }
@@ -323,7 +335,11 @@ else if(screen==="vocab-page"&&vocabPage){
     var prevBtn=document.createElement('button');
     prevBtn.style='width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.5);color:white;border:none;font-size:20px;pointer-events:auto;cursor:pointer';
     prevBtn.textContent='‹';
-    prevBtn.onclick=function(){vocabPage=filtered[currentIndex-1];R();};
+    prevBtn.onclick=function(){
+      vocabPage=filtered[currentIndex-1];
+      modal.remove();
+      R();
+    };
     navContainer.appendChild(prevBtn);
   }else{
     navContainer.appendChild(document.createElement('div'));
@@ -333,7 +349,11 @@ else if(screen==="vocab-page"&&vocabPage){
     var nextBtn=document.createElement('button');
     nextBtn.style='width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.5);color:white;border:none;font-size:20px;pointer-events:auto;cursor:pointer';
     nextBtn.textContent='›';
-    nextBtn.onclick=function(){vocabPage=filtered[currentIndex+1];R();};
+    nextBtn.onclick=function(){
+      vocabPage=filtered[currentIndex+1];
+      modal.remove();
+      R();
+    };
     navContainer.appendChild(nextBtn);
   }else{
     navContainer.appendChild(document.createElement('div'));
