@@ -67,7 +67,7 @@ input{font-family:inherit}
 .vocab-modal-title{font-size:16px;font-weight:600;flex:1;text-align:center;padding:0 20px;color:#1a1a2e}
 .vocab-modal-close{width:36px;height:36px;border-radius:50%;background:#eee;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .vocab-modal-img-container{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:20px}
-.vocab-modal-img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .3s}
+.vocab-modal-img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .3s;transform-origin:center center;touch-action:none}
 .vocab-modal-footer{padding:16px;background:rgba(250,249,247,.95);backdrop-filter:blur(12px);text-align:center;font-size:11px;color:#999}
 
 /* Verbs */
@@ -516,58 +516,107 @@ else if(screen==="vocab-page"&&vocabPage){
   img.src=vocabPage.img;
   img.alt=vocabPage.title;
 
-  // Pinch zoom
+  // Pinch zoom and navigation handling
   var lastDist=0;
-  img.addEventListener('touchstart',function(e){
-    if(e.touches.length===2){
-      lastDist=Math.hypot(e.touches[0].pageX-e.touches[1].pageX,e.touches[0].pageY-e.touches[1].pageY);
-    }
-  });
-  img.addEventListener('touchmove',function(e){
-    if(e.touches.length===2){
-      e.preventDefault();
-      var dist=Math.hypot(e.touches[0].pageX-e.touches[1].pageX,e.touches[0].pageY-e.touches[1].pageY);
-      if(lastDist>0){
-        vocabScale*=dist/lastDist;
-        vocabScale=Math.max(1,Math.min(3,vocabScale));
-        img.style.transform='scale('+vocabScale+')';
-      }
-      lastDist=dist;
-    }
-  });
-  img.addEventListener('touchend',function(){
-    lastDist=0;
-    setTimeout(function(){vocabScale=1;img.style.transform='scale(1)';},300);
-  });
-
-  imgContainer.appendChild(img);
-  modal.appendChild(imgContainer);
-
-  // Add swipe navigation
-  var startX=0;
-  var currentX=0;
+  var startX=0, startY=0;
+  var currentX=0, currentY=0;
+  var panX=0, panY=0;
   var isDragging=false;
+  var isZooming=false;
+  var isPanning=false;
+  var touchStartTime=0;
 
   imgContainer.addEventListener('touchstart',function(e){
-    if(e.touches.length===1){
+    touchStartTime=Date.now();
+
+    if(e.touches.length===2){
+      // Two fingers - start zoom
+      isZooming=true;
+      isDragging=false;
+      isPanning=false;
+      lastDist=Math.hypot(e.touches[0].pageX-e.touches[1].pageX,e.touches[0].pageY-e.touches[1].pageY);
+    }else if(e.touches.length===1){
       startX=e.touches[0].clientX;
-      isDragging=true;
+      startY=e.touches[0].clientY;
+
+      if(vocabScale>1){
+        // When zoomed, use single finger for panning
+        isPanning=true;
+        isDragging=false;
+      }else{
+        // When not zoomed, use single finger for navigation
+        isDragging=true;
+        isPanning=false;
+      }
+      isZooming=false;
     }
   });
 
   imgContainer.addEventListener('touchmove',function(e){
-    if(isDragging && e.touches.length===1){
+    if(e.touches.length===2 || isZooming){
+      // Zooming with two fingers
+      e.preventDefault();
+      isDragging=false;
+      isPanning=false;
+
+      if(e.touches.length===2){
+        var dist=Math.hypot(e.touches[0].pageX-e.touches[1].pageX,e.touches[0].pageY-e.touches[1].pageY);
+        if(lastDist>0){
+          vocabScale*=dist/lastDist;
+          vocabScale=Math.max(1,Math.min(4,vocabScale));
+          img.style.transform='scale('+vocabScale+') translate('+panX+'px,'+panY+'px)';
+        }
+        lastDist=dist;
+      }
+    }else if(isPanning && e.touches.length===1 && vocabScale>1){
+      // Panning when zoomed
+      e.preventDefault();
+      var deltaX=e.touches[0].clientX-startX;
+      var deltaY=e.touches[0].clientY-startY;
+      panX+=deltaX*0.5;
+      panY+=deltaY*0.5;
+
+      // Limit pan to reasonable bounds
+      var maxPan=100*vocabScale;
+      panX=Math.max(-maxPan,Math.min(maxPan,panX));
+      panY=Math.max(-maxPan,Math.min(maxPan,panY));
+
+      img.style.transform='scale('+vocabScale+') translate('+panX+'px,'+panY+'px)';
+      startX=e.touches[0].clientX;
+      startY=e.touches[0].clientY;
+    }else if(isDragging && e.touches.length===1 && vocabScale===1){
+      // Track swipe only when not zoomed
       currentX=e.touches[0].clientX;
+      currentY=e.touches[0].clientY;
     }
   });
 
-  imgContainer.addEventListener('touchend',function(){
-    if(isDragging){
+  imgContainer.addEventListener('touchend',function(e){
+    var touchDuration=Date.now()-touchStartTime;
+
+    // Reset zoom if pinched back to normal
+    if(isZooming && e.touches.length===0){
+      lastDist=0;
+      isZooming=false;
+      if(vocabScale<=1.1){
+        vocabScale=1;
+        panX=0;
+        panY=0;
+        img.style.transform='scale(1)';
+      }
+    }
+
+    // Only process swipe navigation if not zoomed and not panning
+    if(isDragging && !isZooming && !isPanning && vocabScale===1 && touchDuration<500){
       var diff=startX-currentX;
       var filtered=typeof VOCABULARI!=='undefined'?(vocabSection==="all"?VOCABULARI:VOCABULARI.filter(function(v){return v.section===vocabSection;})):[];
       var currentIndex=filtered.findIndex(function(v){return v.page===vocabPage.page;});
 
-      if(Math.abs(diff)>50){ // Minimum swipe distance
+      // Only navigate if horizontal swipe is dominant
+      var horizontalSwipe=Math.abs(startX-currentX);
+      var verticalSwipe=Math.abs(startY-currentY);
+
+      if(horizontalSwipe>verticalSwipe && horizontalSwipe>80){
         if(diff>0 && currentIndex<filtered.length-1){
           // Swipe left - next page
           vocabPage=filtered[currentIndex+1];
@@ -580,8 +629,10 @@ else if(screen==="vocab-page"&&vocabPage){
           R();
         }
       }
-      isDragging=false;
     }
+
+    isDragging=false;
+    isPanning=false;
   });
 
   // Add navigation arrows
