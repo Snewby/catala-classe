@@ -225,7 +225,18 @@ else if(screen==="vocab-page"&&vocabPage){
 
   var header=document.createElement('div');
   header.className='vocab-modal-header';
-  header.innerHTML='<button class="vocab-modal-close" onclick="screen=\'vocab\';R()">←</button><div class="vocab-modal-title">'+vocabPage.title+'</div><div style="width:36px"></div>';
+  var closeBtn=document.createElement('button');
+  closeBtn.className='vocab-modal-close';
+  closeBtn.textContent='←';
+  closeBtn.onclick=function(){screen='vocab';R();};
+  var titleDiv=document.createElement('div');
+  titleDiv.className='vocab-modal-title';
+  titleDiv.textContent=vocabPage.title;
+  var spacerDiv=document.createElement('div');
+  spacerDiv.style.width='36px';
+  header.appendChild(closeBtn);
+  header.appendChild(titleDiv);
+  header.appendChild(spacerDiv);
   modal.appendChild(header);
 
   var imgContainer=document.createElement('div');
