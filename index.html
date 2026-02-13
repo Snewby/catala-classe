@@ -490,8 +490,13 @@ else if(screen==="verbs"){
       // Check if irregular
       var isIrregular=verb.type && !verb.type.includes("regular");
 
-      // Format French form with pronoun
-      var frenchDisplay=frenchPronoun+" "+frenchForm;
+      // Format French form with pronoun - handle elision (je → j' before vowel)
+      var frenchDisplay;
+      if (frenchPronoun === "je" && /^[aeéèêiïoôuùûyh]/i.test(frenchForm)) {
+        frenchDisplay = "j'" + frenchForm;
+      } else {
+        frenchDisplay = frenchPronoun + " " + frenchForm;
+      }
 
       return'<div style="font-size:13px;color:#666;text-align:right">'+catalanPronoun+'</div><div style="font-size:15px;font-weight:600;color:'+(isIrregular?"#C45B3A":"#2A7B5B")+'">'+catalanForm+'</div><div style="font-size:14px;color:#4A54C4">'+frenchDisplay+'</div>';
     }).join("")}));
