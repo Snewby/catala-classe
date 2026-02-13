@@ -273,9 +273,77 @@ else if(screen==="vocab-page"&&vocabPage){
   imgContainer.appendChild(img);
   modal.appendChild(imgContainer);
 
+  // Add swipe navigation
+  var startX=0;
+  var currentX=0;
+  var isDragging=false;
+
+  imgContainer.addEventListener('touchstart',function(e){
+    if(e.touches.length===1){
+      startX=e.touches[0].clientX;
+      isDragging=true;
+    }
+  });
+
+  imgContainer.addEventListener('touchmove',function(e){
+    if(isDragging && e.touches.length===1){
+      currentX=e.touches[0].clientX;
+    }
+  });
+
+  imgContainer.addEventListener('touchend',function(){
+    if(isDragging){
+      var diff=startX-currentX;
+      var filtered=typeof VOCABULARI!=='undefined'?(vocabSection==="all"?VOCABULARI:VOCABULARI.filter(function(v){return v.section===vocabSection;})):[];
+      var currentIndex=filtered.findIndex(function(v){return v.page===vocabPage.page;});
+
+      if(Math.abs(diff)>50){ // Minimum swipe distance
+        if(diff>0 && currentIndex<filtered.length-1){
+          // Swipe left - next page
+          vocabPage=filtered[currentIndex+1];
+          R();
+        }else if(diff<0 && currentIndex>0){
+          // Swipe right - previous page
+          vocabPage=filtered[currentIndex-1];
+          R();
+        }
+      }
+      isDragging=false;
+    }
+  });
+
+  // Add navigation arrows
+  var navContainer=document.createElement('div');
+  navContainer.style='position:absolute;top:50%;left:0;right:0;display:flex;justify-content:space-between;padding:0 10px;pointer-events:none';
+
+  var filtered=typeof VOCABULARI!=='undefined'?(vocabSection==="all"?VOCABULARI:VOCABULARI.filter(function(v){return v.section===vocabSection;})):[];
+  var currentIndex=filtered.findIndex(function(v){return v.page===vocabPage.page;});
+
+  if(currentIndex>0){
+    var prevBtn=document.createElement('button');
+    prevBtn.style='width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.5);color:white;border:none;font-size:20px;pointer-events:auto;cursor:pointer';
+    prevBtn.textContent='‹';
+    prevBtn.onclick=function(){vocabPage=filtered[currentIndex-1];R();};
+    navContainer.appendChild(prevBtn);
+  }else{
+    navContainer.appendChild(document.createElement('div'));
+  }
+
+  if(currentIndex<filtered.length-1){
+    var nextBtn=document.createElement('button');
+    nextBtn.style='width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.5);color:white;border:none;font-size:20px;pointer-events:auto;cursor:pointer';
+    nextBtn.textContent='›';
+    nextBtn.onclick=function(){vocabPage=filtered[currentIndex+1];R();};
+    navContainer.appendChild(nextBtn);
+  }else{
+    navContainer.appendChild(document.createElement('div'));
+  }
+
+  modal.appendChild(navContainer);
+
   var footer=document.createElement('div');
   footer.className='vocab-modal-footer';
-  footer.textContent='Pinça per fer zoom • Toca ← per tornar';
+  footer.textContent='Pinça per fer zoom • Llisca per navegar • Toca ← per tornar';
   modal.appendChild(footer);
 
   document.body.appendChild(modal);
