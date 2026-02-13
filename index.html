@@ -102,7 +102,10 @@ var VERBS=[
 var TENSES=[
 {id:"pres",name:"Present",desc:"Actions happening now or habitually"},
 {id:"imp",name:"Imperfet",desc:"Past actions that were ongoing or habitual"},
-{id:"fut",name:"Futur",desc:"Actions that will happen"}
+{id:"fut",name:"Futur",desc:"Actions that will happen"},
+{id:"cond",name:"Condicional",desc:"Actions that would happen"},
+{id:"pret",name:"Passat Simple",desc:"Completed past actions"},
+{id:"imper",name:"Imperatiu",desc:"Commands and requests"}
 ];
 
 var POSS=[
@@ -120,7 +123,7 @@ var FREQ=[
 
 function $(tag,attr,kids){var el=document.createElement(tag);if(attr){Object.keys(attr).forEach(function(k){if(k==="cls")el.className=attr[k];else if(k==="css")el.style.cssText=attr[k];else if(k==="html")el.innerHTML=attr[k];else if(k.startsWith("on"))el.addEventListener(k.slice(2),attr[k]);else el.setAttribute(k,attr[k]);});}if(kids){if(!Array.isArray(kids))kids=[kids];kids.forEach(function(c){if(c===null||c===undefined)return;if(typeof c==="string")el.appendChild(document.createTextNode(c));else el.appendChild(c);});}return el;}
 
-var screen="home";
+var screen="fitxes";
 var vocabSection="all";
 var vocabPage=null;
 var vocabScale=1;
@@ -130,11 +133,12 @@ var qI=0;
 var qSc=0;
 var qSel=null;
 var qQs=[];
-var gTab="verbs";
+var gTab="poss";
 var gVTense="pres";
+var selectedVerb=0;
 
 function lsSave(){localStorage.setItem("catalaApp",JSON.stringify({selL:selL,fIdx:fIdx,qI:qI,qSc:qSc,gTab:gTab,gVTense:gVTense}));}
-function lsLoad(){try{var d=JSON.parse(localStorage.getItem("catalaApp"));if(d){selL=d.selL||null;fIdx=d.fIdx||0;qI=d.qI||0;qSc=d.qSc||0;gTab=d.gTab||"verbs";gVTense=d.gVTense||"pres";}}catch(e){}}
+function lsLoad(){try{var d=JSON.parse(localStorage.getItem("catalaApp"));if(d){selL=d.selL||null;fIdx=d.fIdx||0;qI=d.qI||0;qSc=d.qSc||0;gTab=d.gTab||"poss";gVTense=d.gVTense||"pres";}}catch(e){}}
 lsLoad();
 
 function go(s){screen=s;if(s==="quiz"&&qI===0){var all=[];LESSONS.forEach(function(l){l.cards.forEach(function(c){all.push({lesson:l.title,q:c.ca,a:c.en});all.push({lesson:l.title,q:c.en,a:c.ca});});});qQs=all.sort(function(){return Math.random()-.5;}).slice(0,20);qQs.forEach(function(q){var wrongOpts=all.filter(function(x){return x.a!==q.a;}).sort(function(){return Math.random()-.5;}).slice(0,3).map(function(x){return x.a;});q.opts=[q.a].concat(wrongOpts).sort(function(){return Math.random()-.5;});});}R();lsSave();}
@@ -144,18 +148,18 @@ var app=document.getElementById("app");
 app.innerHTML="";
 var scr=$("div",{css:"padding:16px 16px 0"});
 
-if(screen==="home"){
+if(screen==="fitxes"){
   scr.appendChild($("div",{css:"padding:8px 0 24px"},[$("div",{cls:"serif",css:"font-size:28px;letter-spacing:-.5px"},"Català"),$("div",{css:"font-size:13px;color:#888;margin-top:2px"},"A1.1 Curs Bàsic")]));
   LESSONS.forEach(function(l){
     var pct=0;if(selL===l.id){pct=Math.round((fIdx/(l.cards.length||1))*100);}
-    scr.appendChild($("div",{css:"background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-left:3px solid "+l.color,onclick:function(){selL=l.id;fIdx=0;go("verbs");lsSave();}},[$("div",{css:"display:flex;align-items:center;gap:10px;margin-bottom:4px"},[$("span",{css:"font-size:24px"},l.icon),$("div",{cls:"serif",css:"font-size:18px;flex:1"},l.title),$("div",{css:"font-size:11px;color:#999"},l.cards.length+" fitxes")]),$("div",{css:"font-size:12px;color:#666;margin-bottom:8px"},l.subtitle),pct>0?$("div",{css:"background:#f0f0f0;border-radius:4px;height:4px;overflow:hidden"},[$("div",{css:"width:"+pct+"%;background:"+l.color+";height:100%;border-radius:4px"})]):null]));
+    scr.appendChild($("div",{css:"background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-left:3px solid "+l.color,onclick:function(){selL=l.id;fIdx=0;go("flashcards");lsSave();}},[$("div",{css:"display:flex;align-items:center;gap:10px;margin-bottom:4px"},[$("span",{css:"font-size:24px"},l.icon),$("div",{cls:"serif",css:"font-size:18px;flex:1"},l.title),$("div",{css:"font-size:11px;color:#999"},l.cards.length+" fitxes")]),$("div",{css:"font-size:12px;color:#666;margin-bottom:8px"},l.subtitle),pct>0?$("div",{css:"background:#f0f0f0;border-radius:4px;height:4px;overflow:hidden"},[$("div",{css:"width:"+pct+"%;background:"+l.color+";height:100%;border-radius:4px"})]):null]));
   });
 }
 
-else if(screen==="verbs"){
-  if(selL===null){go("home");return;}
+else if(screen==="flashcards"){
+  if(selL===null){go("fitxes");return;}
   var l=LESSONS.find(function(x){return x.id===selL;});
-  scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[$("button",{css:"background:none;border:none;font-size:22px;color:#555",onclick:function(){selL=null;fIdx=0;go("home");lsSave();}},"\u2190"),$("div",{css:"flex:1"},[$("div",{cls:"serif",css:"font-size:18px"},l.icon+" "+l.title),$("div",{css:"font-size:11px;color:#888"},l.subtitle)]),$("div",{css:"font-size:12px;color:#999"},(fIdx+1)+" / "+l.cards.length)]));
+  scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[$("button",{css:"background:none;border:none;font-size:22px;color:#555",onclick:function(){selL=null;fIdx=0;go("fitxes");lsSave();}},"\u2190"),$("div",{css:"flex:1"},[$("div",{cls:"serif",css:"font-size:18px"},l.icon+" "+l.title),$("div",{css:"font-size:11px;color:#888"},l.subtitle)]),$("div",{css:"font-size:12px;color:#999"},(fIdx+1)+" / "+l.cards.length)]));
   var c=l.cards[fIdx];
   scr.appendChild($("div",{css:"background:#fff;border-radius:20px;padding:40px 24px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:20px;border-top:3px solid "+l.color},[$("div",{cls:"serif",css:"font-size:32px;margin-bottom:20px;line-height:1.3;color:#1a1a2e"},c.ca),$("div",{css:"font-size:16px;color:#666"},c.en)]));
   var ctrls=$("div",{css:"display:flex;gap:8px;margin-bottom:30px"});
@@ -370,25 +374,62 @@ else if(screen==="vocab-page"&&vocabPage){
   return; // Don't append nav for modal
 }
 
+else if(screen==="verbs"){
+  // Header
+  scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[$("div",{cls:"serif",css:"font-size:22px;flex:1"},"🔤 Conjugació de Verbs")]));
+
+  // Verb selector
+  var selectorContainer=$("div",{css:"background:#fff;border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid #eee"});
+  var selector=$("select",{css:"width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-weight:600;color:#333;background:#fff"});
+  VERBS.forEach(function(v,i){
+    var opt=$("option",{value:i},v.v+" - "+v.en);
+    if(i===selectedVerb)opt.selected=true;
+    selector.appendChild(opt);
+  });
+  selector.onchange=function(){selectedVerb=parseInt(this.value);R();};
+  selectorContainer.appendChild($("div",{css:"margin-bottom:10px"},[$("label",{css:"font-size:12px;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:1px"},"Tria un verb:")]));
+  selectorContainer.appendChild(selector);
+  scr.appendChild(selectorContainer);
+
+  // Display selected verb conjugations
+  var verb=VERBS[selectedVerb];
+  scr.appendChild($("div",{css:"background:#fff;border-radius:16px;padding:20px;border:1px solid #eee;margin-bottom:16px"},[$("div",{css:"display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px"},[$("div",{cls:"serif",css:"font-size:28px;color:#1a1a2e"},verb.v),$("div",{css:"font-size:14px;color:#666"},verb.en)]),verb.t?$("div",{css:"font-size:12px;color:#4A54C4;font-style:italic;margin-bottom:16px"},verb.t):null]));
+
+  // Tense tabs
+  var tenseTabs=$("div",{css:"display:flex;gap:4px;overflow-x:auto;margin-bottom:20px;background:#f5f5f5;border-radius:12px;padding:4px"});
+  TENSES.forEach(function(t){
+    if(!verb.tenses[t.id])return;
+    tenseTabs.appendChild($("button",{css:"padding:8px 14px;border-radius:8px;border:none;background:"+(gVTense===t.id?"#fff":"transparent")+";color:"+(gVTense===t.id?"#333":"#666")+";font-size:12px;white-space:nowrap;font-weight:600;flex-shrink:0;box-shadow:"+(gVTense===t.id?"0 2px 4px rgba(0,0,0,.1)":"none"),onclick:function(){gVTense=t.id;R();}},t.name));
+  });
+  scr.appendChild(tenseTabs);
+
+  // Show conjugations for selected tense
+  var tenseObj=TENSES.find(function(t){return t.id===gVTense;});
+  if(tenseObj&&verb.tenses[gVTense]){
+    scr.appendChild($("div",{css:"background:#FFF8E1;border-radius:12px;padding:12px 16px;margin-bottom:16px"},[$("div",{css:"font-size:13px;color:#795548;font-style:italic"},tenseObj.desc)]));
+
+    var forms=verb.tenses[gVTense];
+    var conjugations=$("div",{css:"background:#fff;border-radius:14px;padding:20px;border:1px solid #eee"});
+    conjugations.appendChild($("div",{css:"display:grid;grid-template-columns:1fr 1.5fr;gap:12px 20px",html:Object.entries(forms).map(function(e){
+      var pronoun=e[0];
+      var form=e[1];
+      var isIrregular=false;
+      // Check if irregular (simplified check - could be improved)
+      if(verb.t&&verb.t.includes("regular")===false){
+        isIrregular=true;
+      }
+      return'<div style="font-size:14px;color:#666;text-align:right">'+pronoun+'</div><div style="font-size:16px;font-weight:600;color:'+(isIrregular?"#C45B3A":"#2A7B5B")+'">'+form+'</div>';
+    }).join("")}));
+    scr.appendChild(conjugations);
+  }
+}
+
 else if(screen==="gram"){
-  scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[$("button",{css:"background:none;border:none;font-size:22px;color:#555",onclick:function(){go("home");}},"\u2190"),$("div",{cls:"serif",css:"font-size:18px"},"📖 Gramàtica")]));
+  scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[$("div",{cls:"serif",css:"font-size:22px;flex:1"},"📝 Gramàtica")]));
   var tabs=$("div",{css:"display:flex;gap:6px;overflow-x:auto;margin-bottom:16px"});
-  [{id:"verbs",l:"Verbs"},{id:"poss",l:"Possessius"},{id:"freq",l:"Freqüència"},{id:"art",l:"Articles"}].forEach(function(t){
+  [{id:"poss",l:"Possessius"},{id:"freq",l:"Freqüència"},{id:"art",l:"Articles"}].forEach(function(t){
     tabs.appendChild($("button",{css:"padding:8px 14px;border-radius:20px;border:"+(gTab===t.id?"none":"1px solid #ddd")+";background:"+(gTab===t.id?"#2A7B5B":"#fff")+";color:"+(gTab===t.id?"#fff":"#555")+";font-size:13px;white-space:nowrap;font-weight:600;flex-shrink:0",onclick:function(){gTab=t.id;R();}},t.l));
   });scr.appendChild(tabs);
-  if(gTab==="verbs"){
-    var gttabs=$("div",{css:"display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px"});
-    TENSES.forEach(function(t){
-      gttabs.appendChild($("button",{css:"padding:6px 11px;border-radius:14px;border:"+(gVTense===t.id?"none":"1px solid #ddd")+";background:"+(gVTense===t.id?"#4A54C4":"#fff")+";color:"+(gVTense===t.id?"#fff":"#555")+";font-size:11px;white-space:nowrap;font-weight:600;flex-shrink:0",onclick:function(){gVTense=t.id;R();}},t.name));
-    });
-    scr.appendChild(gttabs);
-    var gTenseObj=TENSES.find(function(t){return t.id===gVTense;});
-    scr.appendChild($("div",{css:"font-size:11px;color:#888;margin-bottom:12px;font-style:italic"},gTenseObj.desc));
-    VERBS.forEach(function(v){
-      var forms=v.tenses[gVTense];
-      scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee;margin-bottom:14px"},[$("div",{css:"display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"},[$("div",{cls:"serif",css:"font-size:18px"},v.v),$("div",{css:"font-size:11px;color:#999"},v.en)]),$("div",{css:"display:grid;grid-template-columns:1fr 1fr;gap:4px 16px",html:Object.entries(forms).map(function(e){return'<div style="font-size:13px;padding:3px 0"><span style="color:#999">'+e[0]+' </span><span style="font-weight:600">'+e[1]+'</span></div>';}).join("")}),$("div",{css:"font-size:10px;color:#4A54C4;margin-top:6px;font-style:italic"},v.t)]));
-    });
-  }
   if(gTab==="poss")scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee"},[$("div",{cls:"serif",css:"font-size:16px;margin-bottom:12px"},"Els possessius"),$("div",{css:"display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px",html:'<div style="font-weight:700;color:#666">Pronom</div><div style="font-weight:700;color:#666">m.sg · f.sg · m.pl · f.pl</div>'+POSS.map(function(p){return'<div style="color:#4A54C4;font-weight:600">'+p.p+'</div><div style="color:#333">'+p.f.join(" · ")+'</div>';}).join("")}),$("div",{css:"margin-top:14px;padding:10px 14px;background:#FFF8E1;border-radius:10px;font-size:12px;color:#795548;line-height:1.5",html:'<b>Exemple:</b> Aquesta és <em>la meva</em> família. <em>El meu</em> germà es diu Oriol.'})]));
   if(gTab==="freq")scr.appendChild($("div",{css:"background:#fff;border-radius:14px;padding:16px;border:1px solid #eee",html:'<div class="serif" style="font-size:16px;margin-bottom:14px">Adverbis de freqüència</div>'+FREQ.map(function(a){return'<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div style="width:100px;flex-shrink:0"><div style="background:#e8e8e8;border-radius:4px;height:8px;overflow:hidden"><div style="width:'+a.p+'%;height:100%;background:hsl('+(a.p*1.2)+',60%,50%);border-radius:4px"></div></div></div><div style="font-size:14px"><span style="font-weight:600">'+a.c+'</span> <span style="color:#999">('+a.e+')</span></div></div>';}).join("")}));
   if(gTab==="art"){
@@ -401,7 +442,7 @@ else if(screen==="gram"){
 
 app.appendChild(scr);
 var nav=$("div",{cls:"nav"});
-[{id:"home",ic:"🏠",l:"Inici"},{id:"quiz",ic:"⚡",l:"Quiz"},{id:"vocab",ic:"📖",l:"Vocabulari"},{id:"verbs",ic:"📝",l:"Verbs"},{id:"gram",ic:"📚",l:"Gramàtica"}].forEach(function(it){
+[{id:"fitxes",ic:"📚",l:"Fitxes"},{id:"quiz",ic:"⚡",l:"Quiz"},{id:"vocab",ic:"📖",l:"Vocabulari"},{id:"verbs",ic:"🔤",l:"Verbs"},{id:"gram",ic:"📝",l:"Gramàtica"}].forEach(function(it){
   nav.appendChild($("button",{cls:screen===it.id?"active":"",onclick:function(){go(it.id);}},[$("span",{},it.ic),$("span",{},it.l)]));
 });app.appendChild(nav);
 }
