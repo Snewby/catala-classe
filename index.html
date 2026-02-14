@@ -585,6 +585,10 @@ else if(screen==="vocab-page"&&vocabPage){
   img.src=vocabPage.img;
   img.alt=vocabPage.title;
 
+  // Add the image to the container
+  imgContainer.appendChild(img);
+  modal.appendChild(imgContainer);
+
   // Pinch zoom and navigation handling
   var lastDist=0;
   var startX=0, startY=0;
