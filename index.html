@@ -2,7 +2,7 @@
 <html lang="ca">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#faf9f7">
@@ -163,6 +163,14 @@ input{font-family:inherit}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
 @keyframes fadeIn{to{opacity:1}}
 @keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-20px)}60%{transform:translateY(-10px)}}
+/* Wider layouts (tablet / desktop) */
+@media (min-width:768px){
+  .app{max-width:720px}
+  .nav{max-width:720px}
+  .vocab-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .flashcard-main{min-height:360px}
+  .vocab-flashcard{min-height:340px}
+}
 </style>
 </head>
 <body>
@@ -319,6 +327,43 @@ var ttsVoice=null;
   speechSynthesis.addEventListener("voiceschanged",pick);
 })();
 function speak(t){if(!ttsVoice)return;var u=new SpeechSynthesisUtterance(t);u.voice=ttsVoice;u.lang=ttsVoice.lang;u.rate=0.9;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+// --- Keyboard navigation ---
+document.addEventListener("keydown",function(e){
+  if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.altKey||e.ctrlKey||e.metaKey)return;
+  var k=e.key;
+  // Full-screen image modal
+  var modal=document.querySelector(".vocab-modal");
+  if(modal){
+    if(k==="Escape"){modal.remove();screen="vocab";R();}
+    else if(k==="ArrowLeft"||k==="ArrowRight"){
+      var filtered=typeof VOCABULARI!=='undefined'?(vocabSection==="all"?VOCABULARI:VOCABULARI.filter(function(v){return v.section===vocabSection;})):[];
+      var ci=filtered.findIndex(function(v){return v.page===vocabPage.page;});
+      var ni=k==="ArrowRight"?ci+1:ci-1;
+      if(ni>=0&&ni<filtered.length){vocabPage=filtered[ni];modal.remove();R();}
+    }
+    return;
+  }
+  if(screen==="flashcards"&&selL!==null){
+    var l=LESSONS.find(function(x){return x.id===selL;});
+    if(k==="ArrowRight"&&fIdx<l.cards.length-1){fIdx++;flipped=false;R();lsSave();}
+    else if(k==="ArrowLeft"&&fIdx>0){fIdx--;flipped=false;R();lsSave();}
+    else if(k===" "||k==="Enter"){e.preventDefault();flipped=!flipped;R();}
+    else if(k==="Escape"){selL=null;fIdx=0;go("fitxes");}
+  }else if(screen==="review"){
+    if(k===" "||k==="Enter"){e.preventDefault();reviewShowing=reviewShowing==="front"?"back":"front";R();}
+    else if(k==="Escape"){go("fitxes");}
+  }else if(screen==="vocab-flashcard"){
+    if(k===" "||k==="Enter"){e.preventDefault();textVocabShowing=textVocabShowing==="front"?"back":"front";R();}
+    else if(k==="ArrowRight"&&textVocabIndex<textVocabList.length-1){textVocabIndex++;textVocabShowing="front";R();}
+    else if(k==="ArrowLeft"&&textVocabIndex>0){textVocabIndex--;textVocabShowing="front";R();}
+    else if(k==="Escape"){screen="vocab";R();}
+  }else if(screen==="quiz"&&qI<qQs.length&&["1","2","3","4"].indexOf(k)>=0){
+    var qb=document.querySelectorAll(".quiz-answer")[+k-1];if(qb)qb.click();
+  }else if(screen==="verbs"&&vPr&&vPr.i<vPr.qs.length&&["1","2","3","4"].indexOf(k)>=0){
+    var vb=document.querySelectorAll(".quiz-answer")[+k-1];if(vb)vb.click();
+  }
+});
 function ttsBtn(t,css){if(!ttsVoice)return null;return $("button",{cls:"tts-btn","aria-label":"Escolta la pronunciació",css:css||"",onclick:function(e){e.stopPropagation();speak(t);}},"🔊");}
 
 function buildQuiz(){qI=0;qSc=0;qSel=null;qWrong=[];var pool=quizLesson==="all"?LESSONS:LESSONS.filter(function(l){return l.id===quizLesson;});var all=[];pool.forEach(function(l){l.cards.forEach(function(c){all.push({lesson:l.title,q:c.ca,a:c.en});all.push({lesson:l.title,q:c.en,a:c.ca});});});qQs=all.sort(function(){return Math.random()-.5;}).slice(0,20);qQs.forEach(function(q){var wrongOpts=all.filter(function(x){return x.a!==q.a;}).sort(function(){return Math.random()-.5;}).slice(0,3).map(function(x){return x.a;});q.opts=[q.a].concat(wrongOpts).sort(function(){return Math.random()-.5;});});}
@@ -730,11 +775,15 @@ else if(screen==="vocab-page"&&vocabPage){
 
   var modal=document.createElement('div');
   modal.className='vocab-modal show';
+  modal.setAttribute('role','dialog');
+  modal.setAttribute('aria-modal','true');
+  modal.setAttribute('aria-label',vocabPage.title);
 
   var header=document.createElement('div');
   header.className='vocab-modal-header';
   var closeBtn=document.createElement('button');
   closeBtn.className='vocab-modal-close';
+  closeBtn.setAttribute('aria-label','Tanca la imatge');
   closeBtn.textContent='←';
   closeBtn.onclick=function(){
     modal.remove();
@@ -924,6 +973,7 @@ else if(screen==="vocab-page"&&vocabPage){
   modal.appendChild(footer);
 
   document.body.appendChild(modal);
+  closeBtn.focus();
   return; // Don't append nav for modal
 }
 
@@ -1124,9 +1174,12 @@ else if(screen==="gram"){
 }
 
 app.appendChild(scr);
-var nav=$("div",{cls:"nav"});
+var nav=$("nav",{cls:"nav","aria-label":"Navegació principal"});
 [{id:"fitxes",ic:"📚",l:"Fitxes"},{id:"quiz",ic:"⚡",l:"Quiz"},{id:"vocab",ic:"📖",l:"Vocabulari"},{id:"verbs",ic:"🔤",l:"Verbs"},{id:"gram",ic:"📝",l:"Gramàtica"}].forEach(function(it){
-  nav.appendChild($("button",{cls:screen===it.id?"active":"",onclick:function(){go(it.id);}},[$("span",{},it.ic),$("span",{},it.l)]));
+  var isActive=screen===it.id||(it.id==="fitxes"&&(screen==="flashcards"||screen==="review"))||(it.id==="vocab"&&(screen==="vocab-page"||screen==="vocab-flashcard"));
+  var attrs={cls:isActive?"active":"",onclick:function(){go(it.id);}};
+  if(isActive)attrs["aria-current"]="page";
+  nav.appendChild($("button",attrs,[$("span",{"aria-hidden":"true"},it.ic),$("span",{},it.l)]));
 });app.appendChild(nav);
 }
 </script>
