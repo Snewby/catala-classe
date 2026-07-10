@@ -92,6 +92,32 @@ input{font-family:inherit}
 .vocab-flashcard-btn.learn{background:#FF9800;color:#fff}
 .vocab-flashcard-btn:hover{transform:scale(1.05)}
 .vocab-text-empty{text-align:center;padding:40px;color:#999}
+/* SRS grading + flip */
+.grade-btns{display:flex;gap:10px;margin-bottom:16px}
+.grade-btn{flex:1;padding:14px;border-radius:14px;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;color:#fff}
+.grade-btn.no{background:#FF7043}
+.grade-btn.yes{background:#4CAF50}
+.grade-btn:hover{transform:scale(1.03)}
+.flip-hint{font-size:12px;color:#aaa;margin-top:14px}
+.srs-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f0f0f0;color:#888}
+.review-banner{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(102,126,234,.25);transition:transform .2s}
+.review-banner:hover{transform:translateY(-2px)}
+/* TTS */
+.tts-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:background .2s;flex-shrink:0}
+.tts-btn:hover{background:rgba(0,0,0,.06)}
+/* Expressions */
+.expr-item{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,.06);cursor:pointer;transition:all .2s}
+.expr-item:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.expr-head{display:flex;align-items:center;gap:8px}
+.expr-ca{font-size:16px;font-weight:700;color:#333;flex:1}
+.expr-en{font-size:14px;color:#666;margin-top:4px}
+.expr-meta{display:flex;gap:6px;margin-top:8px;align-items:center}
+.expr-tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;background:#f0ecfa;color:#667eea}
+.expr-detail{margin-top:12px;padding:12px;background:#faf9f7;border-radius:10px;font-size:13px;color:#555;line-height:1.6;border-left:3px solid #667eea}
+.expr-detail .lit{color:#999;font-style:italic;margin-bottom:6px}
+.expr-detail .example{margin-top:8px;padding:8px 10px;background:#fff;border-radius:8px;font-style:italic;color:#4A54C4}
+.show-more-btn{width:100%;padding:14px;border-radius:12px;border:1px dashed #ccc;background:#fff;color:#667eea;font-size:14px;font-weight:600;margin:6px 0 16px}
+.show-more-btn:hover{background:#f8f8ff}
 
 /* Verbs */
 .verb-header{display:flex;align-items:center;gap:10px;padding:12px 0;margin-bottom:12px}
@@ -242,12 +268,79 @@ var qQs=[];
 var gTab="poss";
 var gVTense="pres";
 var selectedVerb=0;
+var flipped=false;      // lesson flashcard flip state
+var showBoth=false;     // show both sides of lesson flashcards
+var vocabQuery="";      // shared search query for vocab modes
+var vocabEp="all";      // episode filter for text vocab
+var vocabShown=150;     // chunked rendering limit for text vocab
+var exprCat="all";      // expressions category filter
+var exprOpen=null;      // expanded expression id
+var quizLesson="all";   // per-lesson quiz filter
+var qWrong=[];          // wrongly answered pairs of the current quiz
+var reviewCards=[];     // due-card review session
+var reviewIdx=0;
+var reviewShowing="front";
+var vPr=null;           // verb practice session {qs,i,sc,sel}
+var textVocabList=[];   // items behind the current text-vocab flashcard session
 
-function lsSave(){localStorage.setItem("catalaApp",JSON.stringify({selL:selL,fIdx:fIdx,qI:qI,qSc:qSc,gTab:gTab,gVTense:gVTense}));}
-function lsLoad(){try{var d=JSON.parse(localStorage.getItem("catalaApp"));if(d){selL=d.selL||null;fIdx=d.fIdx||0;qI=d.qI||0;qSc=d.qSc||0;gTab=d.gTab||"poss";gVTense=d.gVTense||"pres";}}catch(e){}}
+function lsSave(){localStorage.setItem("catalaApp",JSON.stringify({screen:screen,selL:selL,fIdx:fIdx,qI:qI,qSc:qSc,gTab:gTab,gVTense:gVTense,quizLesson:quizLesson,vocabMode:vocabMode,vocabEp:vocabEp}));}
+function lsLoad(){try{var d=JSON.parse(localStorage.getItem("catalaApp"));if(d){if(["fitxes","quiz","vocab","verbs","gram"].indexOf(d.screen)>=0)screen=d.screen;selL=d.selL||null;fIdx=d.fIdx||0;qI=d.qI||0;qSc=d.qSc||0;gTab=d.gTab||"poss";gVTense=d.gVTense||"pres";quizLesson=d.quizLesson||"all";vocabMode=d.vocabMode||"visual";vocabEp=d.vocabEp||"all";}}catch(e){}}
 lsLoad();
 
-function go(s){screen=s;if(s==="quiz"&&(qI===0||qQs.length===0)){qI=0;qSc=0;qSel=null;var all=[];LESSONS.forEach(function(l){l.cards.forEach(function(c){all.push({lesson:l.title,q:c.ca,a:c.en});all.push({lesson:l.title,q:c.en,a:c.ca});});});qQs=all.sort(function(){return Math.random()-.5;}).slice(0,20);qQs.forEach(function(q){var wrongOpts=all.filter(function(x){return x.a!==q.a;}).sort(function(){return Math.random()-.5;}).slice(0,3).map(function(x){return x.a;});q.opts=[q.a].concat(wrongOpts).sort(function(){return Math.random()-.5;});});}R();lsSave();}
+// --- Spaced repetition (Leitner boxes 1-5, stored in localStorage "catalaSRS") ---
+var SRS={
+  data:{},
+  INTERVALS:[0,1,3,7,14,30], // days until next review per box
+  load:function(){try{this.data=JSON.parse(localStorage.getItem("catalaSRS"))||{};}catch(e){this.data={};}},
+  save:function(){localStorage.setItem("catalaSRS",JSON.stringify(this.data));},
+  dstr:function(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");},
+  today:function(){return this.dstr(new Date());},
+  grade:function(id,know){var box=know?Math.min(5,(this.data[id]?this.data[id].box:0)+1):1;var d=new Date();d.setDate(d.getDate()+(know?this.INTERVALS[box]:0));this.data[id]={box:box,due:this.dstr(d)};this.save();},
+  box:function(id){return this.data[id]?this.data[id].box:0;},
+  dueIds:function(){var t=this.today(),out=[],d=this.data;Object.keys(d).forEach(function(k){if(d[k].due<=t)out.push(k);});return out;}
+};
+SRS.load();
+
+// Stable SRS card ids: lesson cards "L{lesson}:{index}", text vocab "T:{catalan}", expressions "E:{id}"
+function cardById(id){
+  if(id.slice(0,1)==="L"){var p=id.slice(1).split(":");var l=LESSONS.find(function(x){return x.id===+p[0];});var c=l&&l.cards[+p[1]];if(c)return{id:id,ca:c.ca,en:c.en,src:l.icon+" "+l.title};}
+  else if(id.slice(0,2)==="T:"&&typeof TEXT_VOCABULARY!=="undefined"){var key=id.slice(2);var it=TEXT_VOCABULARY.find(function(x){return x.catalan.toLowerCase()===key;});if(it)return{id:id,ca:it.catalan,en:it.english,src:"📖 Vocabulari"};}
+  else if(id.slice(0,2)==="E:"&&typeof EXPRESSIONS!=="undefined"){var ex=EXPRESSIONS.find(function(x){return "E:"+x.id===id;});if(ex)return{id:id,ca:ex.ca,en:ex.en,src:"💬 Expressions"};}
+  return null;
+}
+function dueCards(){return SRS.dueIds().map(cardById).filter(function(c){return c;});}
+
+// --- Text-to-speech (Catalan voice via Web Speech API) ---
+var ttsVoice=null;
+(function(){
+  if(!("speechSynthesis" in window))return;
+  function pick(){var vs=speechSynthesis.getVoices();ttsVoice=vs.find(function(v){return /^ca([-_]|$)/i.test(v.lang);})||null;}
+  pick();
+  speechSynthesis.addEventListener("voiceschanged",pick);
+})();
+function speak(t){if(!ttsVoice)return;var u=new SpeechSynthesisUtterance(t);u.voice=ttsVoice;u.lang=ttsVoice.lang;u.rate=0.9;speechSynthesis.cancel();speechSynthesis.speak(u);}
+function ttsBtn(t,css){if(!ttsVoice)return null;return $("button",{cls:"tts-btn","aria-label":"Escolta la pronunciació",css:css||"",onclick:function(e){e.stopPropagation();speak(t);}},"🔊");}
+
+function buildQuiz(){qI=0;qSc=0;qSel=null;qWrong=[];var pool=quizLesson==="all"?LESSONS:LESSONS.filter(function(l){return l.id===quizLesson;});var all=[];pool.forEach(function(l){l.cards.forEach(function(c){all.push({lesson:l.title,q:c.ca,a:c.en});all.push({lesson:l.title,q:c.en,a:c.ca});});});qQs=all.sort(function(){return Math.random()-.5;}).slice(0,20);qQs.forEach(function(q){var wrongOpts=all.filter(function(x){return x.a!==q.a;}).sort(function(){return Math.random()-.5;}).slice(0,3).map(function(x){return x.a;});q.opts=[q.a].concat(wrongOpts).sort(function(){return Math.random()-.5;});});}
+function go(s){screen=s;if(s==="quiz"&&(qI===0||qQs.length===0)){buildQuiz();}R();lsSave();}
+
+// Verb practice: one multiple-choice question per pronoun of the selected verb+tense
+function startVerbPractice(){
+  var verb=VERB_DATA[selectedVerb];
+  var forms=verb.catalan[gVTense];
+  var frenchForms=verb.french&&verb.french[gVTense]||{};
+  var pool=[];
+  VERB_DATA.forEach(function(v){var f=v.catalan&&v.catalan[gVTense];if(f)Object.keys(f).forEach(function(p){pool.push(f[p]);});});
+  var qs=Object.keys(forms).map(function(p){
+    var correct=forms[p];
+    var opts=pool.filter(function(x,i){return x!==correct&&pool.indexOf(x)===i;}).sort(function(){return Math.random()-.5;}).slice(0,3);
+    var frP=PRONOUN_MAP[p];
+    var fr=frenchForms[frP]||null;
+    if(fr){if(frP==="je"&&/^[aeéèêiïoôuùûyh]/i.test(fr))fr="j'"+fr;else fr=frP+" "+fr;}
+    return{p:p,a:correct,fr:fr,opts:[correct].concat(opts).sort(function(){return Math.random()-.5;})};
+  });
+  vPr={qs:qs.sort(function(){return Math.random()-.5;}),i:0,sc:0,sel:null};
+}
 
 function R(){
 var app=document.getElementById("app");
@@ -256,10 +349,42 @@ var scr=$("div",{css:"padding:16px 16px 0"});
 
 if(screen==="fitxes"){
   scr.appendChild($("div",{css:"padding:8px 0 24px"},[$("div",{cls:"serif",css:"font-size:28px;letter-spacing:-.5px"},"Català"),$("div",{css:"font-size:13px;color:#888;margin-top:2px"},"A1.1 Curs Bàsic")]));
+  var due=dueCards();
+  scr.appendChild($("div",{cls:"review-banner",role:"button",onclick:function(){if(due.length){reviewCards=due.sort(function(){return Math.random()-.5;});reviewIdx=0;reviewShowing="front";screen="review";R();}}},[
+    $("span",{css:"font-size:28px"},due.length?"🔁":"🎉"),
+    $("div",{css:"flex:1"},[
+      $("div",{css:"font-size:16px;font-weight:700"},due.length?"Repàs del dia":"Tot al dia!"),
+      $("div",{css:"font-size:13px;opacity:.9"},due.length?due.length+" targetes per repassar avui":"Cap targeta pendent. Aprèn coses noves!")]),
+    due.length?$("span",{css:"font-size:20px"},"→"):null]));
   LESSONS.forEach(function(l){
-    var pct=0;if(selL===l.id){pct=Math.round((fIdx/(l.cards.length||1))*100);}
-    scr.appendChild($("div",{css:"background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-left:3px solid "+l.color,onclick:function(){selL=l.id;fIdx=0;go("flashcards");lsSave();}},[$("div",{css:"display:flex;align-items:center;gap:10px;margin-bottom:4px"},[$("span",{css:"font-size:24px"},l.icon),$("div",{cls:"serif",css:"font-size:18px;flex:1"},l.title),$("div",{css:"font-size:11px;color:#999"},l.cards.length+" fitxes")]),$("div",{css:"font-size:12px;color:#666;margin-bottom:8px"},l.subtitle),pct>0?$("div",{css:"background:#f0f0f0;border-radius:4px;height:4px;overflow:hidden"},[$("div",{css:"width:"+pct+"%;background:"+l.color+";height:100%;border-radius:4px"})]):null]));
+    var known=0;l.cards.forEach(function(c,i){if(SRS.box("L"+l.id+":"+i)>=2)known++;});
+    var pct=Math.round((known/(l.cards.length||1))*100);
+    scr.appendChild($("div",{css:"background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-left:3px solid "+l.color+";cursor:pointer",onclick:function(){selL=l.id;fIdx=0;flipped=false;go("flashcards");lsSave();}},[$("div",{css:"display:flex;align-items:center;gap:10px;margin-bottom:4px"},[$("span",{css:"font-size:24px"},l.icon),$("div",{cls:"serif",css:"font-size:18px;flex:1"},l.title),$("div",{css:"font-size:11px;color:#999"},pct>0?pct+"% après · "+l.cards.length+" fitxes":l.cards.length+" fitxes")]),$("div",{css:"font-size:12px;color:#666;margin-bottom:8px"},l.subtitle),pct>0?$("div",{css:"background:#f0f0f0;border-radius:4px;height:4px;overflow:hidden"},[$("div",{css:"width:"+pct+"%;background:"+l.color+";height:100%;border-radius:4px"})]):null]));
   });
+}
+
+else if(screen==="review"){
+  if(reviewIdx>=reviewCards.length){
+    scr.appendChild($("div",{cls:"quiz-complete"},[
+      $("div",{cls:"quiz-complete-icon"},"🎉"),
+      $("div",{cls:"serif",css:"font-size:26px;margin-bottom:8px"},"Repàs completat!"),
+      $("div",{css:"font-size:15px;color:#888;margin-bottom:28px"},"Has repassat "+reviewCards.length+" targetes. Tot al dia!"),
+      $("button",{css:"padding:14px 32px;border-radius:14px;border:none;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:16px;font-weight:600",onclick:function(){go("fitxes");}},"← Tornar a l'inici")]));
+  }else{
+    var rc=reviewCards[reviewIdx];
+    scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[
+      $("button",{css:"background:none;border:none;font-size:22px;color:#555","aria-label":"Enrere",onclick:function(){go("fitxes");}},"←"),
+      $("div",{css:"flex:1"},[$("div",{cls:"serif",css:"font-size:18px"},"🔁 Repàs"),$("div",{css:"font-size:11px;color:#888"},rc.src)]),
+      $("div",{css:"font-size:12px;color:#999"},(reviewIdx+1)+" / "+reviewCards.length)]));
+    var fc=$("div",{cls:"vocab-flashcard",onclick:function(){reviewShowing=reviewShowing==="front"?"back":"front";R();}},[
+      reviewShowing==="front"?ttsBtn(rc.ca,"position:absolute;top:14px;right:14px"):null,
+      $("div",{cls:"vocab-flashcard-text",lang:reviewShowing==="front"?"ca":"en"},reviewShowing==="front"?rc.ca:rc.en),
+      $("div",{cls:"vocab-flashcard-hint"},reviewShowing==="front"?"Toca per veure la traducció":"Toca per tornar")]);
+    scr.appendChild($("div",{cls:"vocab-flashcard-mode"},[fc,
+      $("div",{cls:"grade-btns"},[
+        $("button",{cls:"grade-btn no",onclick:function(){SRS.grade(rc.id,false);reviewIdx++;reviewShowing="front";R();}},"✗ Encara no"),
+        $("button",{cls:"grade-btn yes",onclick:function(){SRS.grade(rc.id,true);reviewIdx++;reviewShowing="front";R();}},"✓ Ho sé")])]));
+  }
 }
 
 else if(screen==="flashcards"){
@@ -274,27 +399,44 @@ else if(screen==="flashcards"){
   progressBar.appendChild($("div",{css:"width:"+(((fIdx+1)/l.cards.length)*100)+"%;height:100%;background:"+l.color+";transition:width .3s;border-radius:4px"}));
   scr.appendChild(progressBar);
 
-  // Flashcard with swipe support
+  // Flashcard with swipe support and flip-to-reveal
   var c=l.cards[fIdx];
+  var cardId="L"+l.id+":"+fIdx;
+  var revealed=showBoth||flipped;
   var cardContainer=$("div",{cls:"flashcard-container"});
-  var card=$("div",{cls:"flashcard-main",css:"--lesson-color:"+l.color},[$("div",{cls:"serif",css:"font-size:32px;margin-bottom:20px;line-height:1.3;color:#1a1a2e"},c.ca),$("div",{css:"font-size:16px;color:#666"},c.en)]);
+  var card=$("div",{cls:"flashcard-main",css:"--lesson-color:"+l.color+";cursor:pointer;position:relative",onclick:function(){if(!showBoth){flipped=!flipped;R();}}},[
+    ttsBtn(c.ca,"position:absolute;top:14px;right:14px"),
+    SRS.box(cardId)>0?$("span",{cls:"srs-badge",css:"position:absolute;top:20px;left:16px"},"caixa "+SRS.box(cardId)):null,
+    $("div",{cls:"serif",lang:"ca",css:"font-size:32px;margin-bottom:20px;line-height:1.3;color:#1a1a2e"},c.ca),
+    revealed?$("div",{lang:"en",css:"font-size:16px;color:#666"},c.en):$("div",{cls:"flip-hint"},"Toca per veure la traducció")]);
 
   // Touch handling for swipe
-  var startX=0,currentX=0,isDragging=false;
-  card.addEventListener("touchstart",function(e){if(e.touches.length===1){startX=e.touches[0].clientX;isDragging=true;}});
-  card.addEventListener("touchmove",function(e){if(isDragging&&e.touches.length===1){currentX=e.touches[0].clientX;var diff=currentX-startX;if(Math.abs(diff)>10){card.style.transform="translateX("+diff*.3+"px)";}}});
-  card.addEventListener("touchend",function(){if(isDragging){var diff=startX-currentX;card.style.transform="";if(Math.abs(diff)>50){if(diff>0&&fIdx<l.cards.length-1){fIdx++;R();lsSave();}else if(diff<0&&fIdx>0){fIdx--;R();lsSave();}}isDragging=false;}});
+  var startX=0,currentX=0,isDragging=false,moved=false;
+  card.addEventListener("touchstart",function(e){if(e.touches.length===1){startX=e.touches[0].clientX;currentX=startX;isDragging=true;moved=false;}});
+  card.addEventListener("touchmove",function(e){if(isDragging&&e.touches.length===1){currentX=e.touches[0].clientX;var diff=currentX-startX;if(Math.abs(diff)>10){moved=true;card.style.transform="translateX("+diff*.3+"px)";}}});
+  card.addEventListener("touchend",function(){if(isDragging){var diff=startX-currentX;card.style.transform="";if(moved&&Math.abs(diff)>50){if(diff>0&&fIdx<l.cards.length-1){fIdx++;flipped=false;R();lsSave();}else if(diff<0&&fIdx>0){fIdx--;flipped=false;R();lsSave();}}isDragging=false;}});
 
   cardContainer.appendChild(card);
   scr.appendChild(cardContainer);
 
+  // SRS grading
+  var gradeAdvance=function(know){
+    SRS.grade(cardId,know);
+    if(fIdx<l.cards.length-1)fIdx++;
+    flipped=false;
+    R();lsSave();
+  };
+  scr.appendChild($("div",{cls:"grade-btns"},[
+    $("button",{cls:"grade-btn no",onclick:function(){gradeAdvance(false);}},"✗ Encara no"),
+    $("button",{cls:"grade-btn yes",onclick:function(){gradeAdvance(true);}},"✓ Ho sé")]));
+
   // Navigation buttons
   var ctrls=$("div",{css:"display:flex;gap:8px;margin-bottom:20px"});
-  var prevBtn=$("button",{css:"flex:1;padding:12px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:15px;font-weight:600;color:#555;opacity:"+(fIdx===0?".3":"1"),onclick:function(){if(fIdx>0){fIdx--;R();lsSave();}}},"\u2190 Enrere");
+  var prevBtn=$("button",{css:"flex:1;padding:12px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:15px;font-weight:600;color:#555;opacity:"+(fIdx===0?".3":"1"),onclick:function(){if(fIdx>0){fIdx--;flipped=false;R();lsSave();}}},"\u2190 Enrere");
   if(fIdx===0)prevBtn.disabled=true;
   ctrls.appendChild(prevBtn);
-
-  var nextBtn=$("button",{css:"flex:1;padding:12px;border-radius:12px;border:none;background:"+l.color+";font-size:15px;font-weight:600;color:#fff;opacity:"+(fIdx===l.cards.length-1?".3":"1"),onclick:function(){if(fIdx<l.cards.length-1){fIdx++;R();lsSave();}}},("Següent \u2192"));
+  ctrls.appendChild($("button",{css:"padding:12px 14px;border-radius:12px;border:1px solid "+(showBoth?l.color:"#ddd")+";background:"+(showBoth?l.color:"#fff")+";color:"+(showBoth?"#fff":"#999")+";font-size:15px","aria-label":"Mostra les dues cares",title:"Mostra les dues cares",onclick:function(){showBoth=!showBoth;R();}},"👁"));
+  var nextBtn=$("button",{css:"flex:1;padding:12px;border-radius:12px;border:none;background:"+l.color+";font-size:15px;font-weight:600;color:#fff;opacity:"+(fIdx===l.cards.length-1?".3":"1"),onclick:function(){if(fIdx<l.cards.length-1){fIdx++;flipped=false;R();lsSave();}}},("Següent \u2192"));
   if(fIdx===l.cards.length-1)nextBtn.disabled=true;
   ctrls.appendChild(nextBtn);
   scr.appendChild(ctrls);
@@ -306,7 +448,7 @@ else if(screen==="flashcards"){
     // Show all dots
     for(var i=0;i<l.cards.length;i++){
       (function(idx){
-        dots.appendChild($("button",{cls:"progress-dot"+(idx===fIdx?" active":"")+(idx<fIdx?" completed":""),css:"--lesson-color:"+l.color,onclick:function(){fIdx=idx;R();lsSave();}}));
+        dots.appendChild($("button",{cls:"progress-dot"+(idx===fIdx?" active":"")+(idx<fIdx?" completed":""),css:"--lesson-color:"+l.color,onclick:function(){fIdx=idx;flipped=false;R();lsSave();}}));
       })(i);
     }
   }else{
@@ -315,7 +457,7 @@ else if(screen==="flashcards"){
     for(var i=0;i<l.cards.length;i+=step){
       (function(idx){
         var isNear=Math.abs(idx-fIdx)<=step;
-        dots.appendChild($("button",{cls:"progress-dot"+(Math.abs(idx-fIdx)<step/2?" active":"")+(idx<fIdx?" completed":""),css:"--lesson-color:"+l.color,onclick:function(){fIdx=idx;R();lsSave();}}));
+        dots.appendChild($("button",{cls:"progress-dot"+(Math.abs(idx-fIdx)<step/2?" active":"")+(idx<fIdx?" completed":""),css:"--lesson-color:"+l.color,onclick:function(){fIdx=idx;flipped=false;R();lsSave();}}));
       })(i);
     }
   }
@@ -340,8 +482,16 @@ else if(screen==="quiz"){
   progressDiv.innerHTML='<svg class="quiz-progress-ring"><circle cx="60" cy="60" r="54" class="quiz-progress-circle"/><circle cx="60" cy="60" r="54" class="quiz-progress-circle active" style="stroke-dasharray:'+dashArray+','+circumference+'"/></svg><div class="quiz-progress-text">'+qSc+'/'+qI+'<div class="quiz-progress-percent">'+percent+'%</div></div>';
   header.appendChild(progressDiv);
   header.appendChild($("div",{cls:"serif",css:"font-size:28px;margin-bottom:4px"},"⚡ Quiz Ràpid"));
-  header.appendChild($("div",{css:"font-size:14px;color:#888"},"20 preguntes aleatòries"));
+  header.appendChild($("div",{css:"font-size:14px;color:#888"},qQs.length+" preguntes"+(quizLesson==="all"?" aleatòries":"")));
   scr.appendChild(header);
+
+  // Lesson filter chips (changing filter restarts the quiz)
+  var qFilter=$("div",{cls:"vocab-filter",css:"border-radius:12px;margin-bottom:16px"});
+  qFilter.appendChild($("button",{cls:quizLesson==="all"?"active":"",onclick:function(){if(quizLesson!=="all"){quizLesson="all";buildQuiz();R();lsSave();}}},"📚 Totes"));
+  LESSONS.forEach(function(l){
+    qFilter.appendChild($("button",{cls:quizLesson===l.id?"active":"",title:l.title,onclick:function(){if(quizLesson!==l.id){quizLesson=l.id;buildQuiz();R();lsSave();}}},l.icon+" "+l.title));
+  });
+  scr.appendChild(qFilter);
 
   if(qI>=qQs.length){
     // Quiz complete screen
@@ -360,6 +510,18 @@ else if(screen==="quiz"){
     complete.appendChild($("div",{css:"font-size:16px;color:#999;margin-bottom:32px"},message));
     complete.appendChild($("button",{css:"padding:14px 32px;border-radius:14px;border:none;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:16px;font-weight:600;box-shadow:0 4px 20px rgba(102,126,234,.3)",onclick:function(){qI=0;qSc=0;qSel=null;go("quiz");}},"🔄 Tornar a començar"));
     scr.appendChild(complete);
+
+    // Wrongly answered pairs, for review
+    if(qWrong.length){
+      var wrongBox=$("div",{css:"background:#fff;border-radius:16px;padding:18px;margin:0 4px 20px;border:1px solid #FFCDD2;text-align:left"});
+      wrongBox.appendChild($("div",{cls:"serif",css:"font-size:16px;margin-bottom:12px;color:#c62828"},"❌ Per repassar ("+qWrong.length+")"));
+      qWrong.forEach(function(w){
+        wrongBox.appendChild($("div",{css:"padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:14px"},[
+          $("div",{css:"font-weight:700;color:#333"},w.q),
+          $("div",{css:"color:#2A7B5B"},"→ "+w.a)]));
+      });
+      scr.appendChild(wrongBox);
+    }
   }else{
     // Current question
     var q=qQs[qI];
@@ -379,6 +541,7 @@ else if(screen==="quiz"){
           qSc++;
           this.innerHTML+=`<span class="quiz-answer-feedback">✓</span>`;
         }else{
+          qWrong.push({q:q.q,a:q.a});
           this.innerHTML+=`<span class="quiz-answer-feedback">✗</span>`;
         }
         R();
@@ -393,34 +556,47 @@ else if(screen==="vocab"){
   // Header with gradient
   var header=$("div",{cls:"vocab-header"});
   header.appendChild($("h1",{cls:"serif"},"📖 Vocabulari"));
-  header.appendChild($("p",{},vocabMode==="visual"?((typeof VOCABULARI!=='undefined'?VOCABULARI.length:0)+" pàgines il·lustrades"):((typeof TEXT_VOCABULARY!=='undefined'?TEXT_VOCABULARY.length:0)+" paraules i frases")));
+  var nText=typeof TEXT_VOCABULARY!=='undefined'?TEXT_VOCABULARY.length:0;
+  var nVis=typeof VOCABULARI!=='undefined'?VOCABULARI.length:0;
+  var nExpr=typeof EXPRESSIONS!=='undefined'?EXPRESSIONS.length:0;
+  header.appendChild($("p",{},vocabMode==="visual"?nVis+" pàgines il·lustrades":vocabMode==="text"?nText+" paraules i frases":nExpr+" expressions del podcast"));
   scr.appendChild(header);
 
   // Mode toggle
   var modeToggle=$("div",{cls:"vocab-mode-toggle"});
-  modeToggle.appendChild($("button",{cls:vocabMode==="visual"?"active":"",onclick:function(){vocabMode="visual";R();}},"🖼️ Visual"));
-  modeToggle.appendChild($("button",{cls:vocabMode==="text"?"active":"",onclick:function(){vocabMode="text";textVocabIndex=0;R();}},"📝 Text"));
+  modeToggle.appendChild($("button",{cls:vocabMode==="visual"?"active":"",onclick:function(){vocabMode="visual";vocabQuery="";R();lsSave();}},"🖼️ Visual"));
+  modeToggle.appendChild($("button",{cls:vocabMode==="text"?"active":"",onclick:function(){vocabMode="text";vocabQuery="";vocabShown=150;textVocabIndex=0;R();lsSave();}},"📝 Text"));
+  modeToggle.appendChild($("button",{cls:vocabMode==="expressions"?"active":"",onclick:function(){vocabMode="expressions";vocabQuery="";R();lsSave();}},"💬 Dites"));
   scr.appendChild(modeToggle);
 
-  // Search bar
+  // Text-mode data helpers (episode filter + search over the FULL data set)
+  var textList=function(){
+    if(typeof TEXT_VOCABULARY==='undefined')return [];
+    var l=vocabEp==="all"?TEXT_VOCABULARY:TEXT_VOCABULARY.filter(function(e){return e.eps&&e.eps.indexOf(vocabEp)>=0;});
+    if(vocabQuery){var q=vocabQuery.toLowerCase();l=l.filter(function(e){return e.catalan.toLowerCase().includes(q)||e.english.toLowerCase().includes(q);});}
+    return l;
+  };
+  var exprList=function(){
+    if(typeof EXPRESSIONS==='undefined')return [];
+    var l=exprCat==="all"?EXPRESSIONS:EXPRESSIONS.filter(function(e){return e.cat===exprCat;});
+    if(vocabQuery){var q=vocabQuery.toLowerCase();l=l.filter(function(e){return e.ca.toLowerCase().includes(q)||e.en.toLowerCase().includes(q);});}
+    return l;
+  };
+  var renderTextItems,renderExprItems; // defined below per mode
+
+  // Search bar (re-renders only the list container, so the input keeps focus)
   var searchContainer=$("div",{cls:"vocab-search"});
-  var searchInput=$("input",{cls:"vocab-search-input",type:"text",placeholder:"🔍 Buscar vocabulari...",oninput:function(){
-    var query=this.value.toLowerCase();
+  var searchInput=$("input",{cls:"vocab-search-input",type:"text",placeholder:"🔍 Buscar vocabulari...",value:vocabQuery,oninput:function(){
+    vocabQuery=this.value;
     if(vocabMode==="visual"){
-      var cards=document.querySelectorAll('.vocab-card');
-      cards.forEach(function(card){
+      var query=vocabQuery.toLowerCase();
+      document.querySelectorAll('.vocab-card').forEach(function(card){
         var title=card.querySelector('.vocab-card-title').textContent.toLowerCase();
         var subtitle=card.querySelector('.vocab-card-subtitle').textContent.toLowerCase();
         card.style.display=(title.includes(query)||subtitle.includes(query))?'block':'none';
       });
-    }else{
-      var items=document.querySelectorAll('.vocab-text-item');
-      items.forEach(function(item){
-        var catalan=item.querySelector('.vocab-text-catalan').textContent.toLowerCase();
-        var english=item.querySelector('.vocab-text-english').textContent.toLowerCase();
-        item.style.display=(catalan.includes(query)||english.includes(query))?'block':'none';
-      });
-    }
+    }else if(vocabMode==="text"){vocabShown=150;if(renderTextItems)renderTextItems();}
+    else if(renderExprItems)renderExprItems();
   }});
   searchContainer.appendChild(searchInput);
   scr.appendChild(searchContainer);
@@ -457,32 +633,91 @@ else if(screen==="vocab"){
       grid.appendChild(card);
     });
     scr.appendChild(grid);
-  }else{
-    // Text vocabulary list
-    var listContainer=$("div",{cls:"vocab-text-list"});
-
-    // Check if TEXT_VOCABULARY exists
+  }else if(vocabMode==="text"){
+    // Episode filter chips
     if(typeof TEXT_VOCABULARY!=='undefined'){
-      TEXT_VOCABULARY.forEach(function(item){
-        var vocabItem=$("div",{cls:"vocab-text-item",onclick:function(){
-          // Start flashcard mode with this word
-          textVocabIndex=TEXT_VOCABULARY.indexOf(item);
-          textVocabShowing="front";
-          screen="vocab-flashcard";
-          R();
-        }});
-        vocabItem.appendChild($("div",{cls:"vocab-text-catalan"},item.catalan));
-        vocabItem.appendChild($("div",{cls:"vocab-text-english"},item.english));
-        listContainer.appendChild(vocabItem);
+      var eps=[];TEXT_VOCABULARY.forEach(function(e){(e.eps||[]).forEach(function(x){if(eps.indexOf(x)<0)eps.push(x);});});eps.sort(function(a,b){return a-b;});
+      var epFilter=$("div",{cls:"vocab-filter"});
+      epFilter.appendChild($("button",{cls:vocabEp==="all"?"active":"",onclick:function(){vocabEp="all";vocabShown=150;R();lsSave();}},"Tots"));
+      eps.forEach(function(ep){
+        epFilter.appendChild($("button",{cls:vocabEp===ep?"active":"",onclick:function(){vocabEp=ep;vocabShown=150;R();lsSave();}},"Ep. "+ep));
       });
+      scr.appendChild(epFilter);
+    }
 
-      // Stats
-      listContainer.appendChild($("div",{cls:"vocab-text-stats"},"Total: "+TEXT_VOCABULARY.length+" paraules"));
+    var listContainer=$("div",{cls:"vocab-text-list"});
+    if(typeof TEXT_VOCABULARY!=='undefined'){
+      renderTextItems=function(){
+        listContainer.innerHTML="";
+        var items=textList();
+        items.slice(0,vocabShown).forEach(function(item){
+          var vocabItem=$("div",{cls:"vocab-text-item",css:"display:flex;align-items:center;gap:8px",onclick:function(){
+            textVocabList=items;
+            textVocabIndex=items.indexOf(item);
+            textVocabShowing="front";
+            screen="vocab-flashcard";
+            R();
+          }},[
+            $("div",{css:"flex:1"},[
+              $("div",{cls:"vocab-text-catalan",lang:"ca"},item.catalan),
+              $("div",{cls:"vocab-text-english",lang:"en"},item.english)]),
+            ttsBtn(item.catalan)]);
+          listContainer.appendChild(vocabItem);
+        });
+        if(items.length>vocabShown){
+          listContainer.appendChild($("button",{cls:"show-more-btn",onclick:function(){vocabShown+=150;renderTextItems();}},"Mostra'n més ("+(items.length-vocabShown)+" restants)"));
+        }
+        listContainer.appendChild($("div",{cls:"vocab-text-stats"},items.length+" paraules"+(vocabEp!=="all"?" a l'episodi "+vocabEp:"")));
+        if(!items.length)listContainer.appendChild($("div",{cls:"vocab-text-empty"},"Cap resultat"));
+      };
+      renderTextItems();
     }else{
       listContainer.appendChild($("div",{cls:"vocab-text-empty"},"Carregant vocabulari..."));
     }
-
     scr.appendChild(listContainer);
+  }else{
+    // Expressions mode
+    var catFilter=$("div",{cls:"vocab-filter"});
+    catFilter.appendChild($("button",{cls:exprCat==="all"?"active":"",onclick:function(){exprCat="all";R();}},"Tots"));
+    (typeof EXPRESSION_CATEGORIES!=='undefined'?EXPRESSION_CATEGORIES:[]).forEach(function(cat){
+      catFilter.appendChild($("button",{cls:exprCat===cat.id?"active":"",onclick:function(){exprCat=cat.id;R();}},cat.icon+" "+cat.name));
+    });
+    scr.appendChild(catFilter);
+
+    var exprContainer=$("div",{cls:"vocab-text-list"});
+    if(typeof EXPRESSIONS!=='undefined'&&EXPRESSIONS.length){
+      var catById={};(EXPRESSION_CATEGORIES||[]).forEach(function(c){catById[c.id]=c;});
+      renderExprItems=function(){
+        exprContainer.innerHTML="";
+        var items=exprList();
+        items.forEach(function(ex){
+          var isOpen=exprOpen===ex.id;
+          var cat=catById[ex.cat]||{icon:"",name:ex.cat};
+          var body=[
+            $("div",{cls:"expr-head"},[
+              $("div",{cls:"expr-ca",lang:"ca"},ex.ca),
+              ttsBtn(ex.ca)]),
+            $("div",{cls:"expr-en",lang:"en"},ex.en),
+            $("div",{cls:"expr-meta"},[
+              $("span",{cls:"expr-tag"},cat.icon+" "+cat.name),
+              $("span",{cls:"expr-tag",css:"background:#f0f0f0;color:#888"},"Ep. "+ex.ep)])];
+          if(isOpen){
+            var det=[];
+            if(ex.lit)det.push($("div",{cls:"lit"},"Literalment: “"+ex.lit+"”"));
+            det.push($("div",{},ex.note));
+            if(ex.example)det.push($("div",{cls:"example",lang:"ca"},"“"+ex.example+"”"));
+            body.push($("div",{cls:"expr-detail"},det));
+          }
+          exprContainer.appendChild($("div",{cls:"expr-item",onclick:function(){exprOpen=isOpen?null:ex.id;renderExprItems();}},body));
+        });
+        if(!items.length)exprContainer.appendChild($("div",{cls:"vocab-text-empty"},"Cap resultat"));
+        else exprContainer.appendChild($("div",{cls:"vocab-text-stats"},items.length+" expressions"));
+      };
+      renderExprItems();
+    }else{
+      exprContainer.appendChild($("div",{cls:"vocab-text-empty"},"Carregant expressions..."));
+    }
+    scr.appendChild(exprContainer);
   }
 }
 
@@ -693,78 +928,97 @@ else if(screen==="vocab-page"&&vocabPage){
 }
 
 else if(screen==="vocab-flashcard"){
-  // Flashcard mode for text vocabulary
+  // Flashcard study mode for text vocabulary (over the filtered list)
+  if(!textVocabList.length&&typeof TEXT_VOCABULARY!=='undefined')textVocabList=TEXT_VOCABULARY;
   var header=$("div",{cls:"vocab-header"});
   header.appendChild($("h1",{cls:"serif"},"📖 Targetes de vocabulari"));
-  header.appendChild($("p",{},"Targeta "+(textVocabIndex+1)+" de "+TEXT_VOCABULARY.length));
+  header.appendChild($("p",{},"Targeta "+(textVocabIndex+1)+" de "+textVocabList.length));
   scr.appendChild(header);
 
-  // Back button
-  var backBtn=$("button",{cls:"btn",style:"margin:16px;",onclick:function(){screen="vocab";R();}},"← Tornar a la llista");
+  var backBtn=$("button",{cls:"btn",css:"margin:16px 16px 0",onclick:function(){screen="vocab";R();}},"← Tornar a la llista");
   scr.appendChild(backBtn);
 
   var flashcardContainer=$("div",{cls:"vocab-flashcard-mode"});
 
-  if(typeof TEXT_VOCABULARY!=='undefined' && TEXT_VOCABULARY[textVocabIndex]){
-    var currentItem=TEXT_VOCABULARY[textVocabIndex];
+  if(textVocabList[textVocabIndex]){
+    var currentItem=textVocabList[textVocabIndex];
+    var srsId="T:"+currentItem.catalan.toLowerCase();
 
-    // Flashcard
     var flashcard=$("div",{cls:"vocab-flashcard",onclick:function(){
       textVocabShowing=textVocabShowing==="front"?"back":"front";
       R();
-    }});
-
-    var text=$("div",{cls:"vocab-flashcard-text"},
-      textVocabShowing==="front"?currentItem.catalan:currentItem.english
-    );
-    flashcard.appendChild(text);
-
-    var hint=$("div",{cls:"vocab-flashcard-hint"},
-      textVocabShowing==="front"?"Toca per veure la traducció":"Toca per veure el català"
-    );
-    flashcard.appendChild(hint);
-
+    }},[
+      textVocabShowing==="front"?ttsBtn(currentItem.catalan,"position:absolute;top:14px;right:14px"):null,
+      SRS.box(srsId)>0?$("span",{cls:"srs-badge",css:"position:absolute;top:20px;left:16px"},"caixa "+SRS.box(srsId)):null,
+      $("div",{cls:"vocab-flashcard-text",lang:textVocabShowing==="front"?"ca":"en"},textVocabShowing==="front"?currentItem.catalan:currentItem.english),
+      $("div",{cls:"vocab-flashcard-hint"},textVocabShowing==="front"?"Toca per veure la traducció":"Toca per veure el català")]);
     flashcardContainer.appendChild(flashcard);
 
-    // Controls
-    var controls=$("div",{cls:"vocab-flashcard-controls"});
+    // SRS grading advances to the next card
+    var tvAdvance=function(know){
+      SRS.grade(srsId,know);
+      if(textVocabIndex<textVocabList.length-1){textVocabIndex++;textVocabShowing="front";R();}
+      else{screen="vocab";R();}
+    };
+    flashcardContainer.appendChild($("div",{cls:"grade-btns"},[
+      $("button",{cls:"grade-btn no",onclick:function(){tvAdvance(false);}},"✗ Encara no"),
+      $("button",{cls:"grade-btn yes",onclick:function(){tvAdvance(true);}},"✓ Ho sé")]));
 
+    // Prev / next navigation
+    var controls=$("div",{cls:"vocab-flashcard-controls"});
     if(textVocabIndex>0){
-      controls.appendChild($("button",{cls:"vocab-flashcard-btn",onclick:function(){
-        textVocabIndex--;
-        textVocabShowing="front";
-        R();
+      controls.appendChild($("button",{cls:"vocab-flashcard-btn",css:"background:#eee;color:#555",onclick:function(){
+        textVocabIndex--;textVocabShowing="front";R();
       }},"← Anterior"));
     }
-
-    controls.appendChild($("button",{cls:"vocab-flashcard-btn know",onclick:function(){
-      if(textVocabIndex<TEXT_VOCABULARY.length-1){
-        textVocabIndex++;
-        textVocabShowing="front";
-        R();
-      }else{
-        screen="vocab";
-        R();
-      }
-    }},"✓ Ho sé"));
-
-    if(textVocabIndex<TEXT_VOCABULARY.length-1){
-      controls.appendChild($("button",{cls:"vocab-flashcard-btn learn",onclick:function(){
-        textVocabIndex++;
-        textVocabShowing="front";
-        R();
-      }},"→ Següent"));
+    if(textVocabIndex<textVocabList.length-1){
+      controls.appendChild($("button",{cls:"vocab-flashcard-btn",css:"background:#eee;color:#555",onclick:function(){
+        textVocabIndex++;textVocabShowing="front";R();
+      }},"Següent →"));
     }else{
-      controls.appendChild($("button",{cls:"vocab-flashcard-btn",onclick:function(){
-        screen="vocab";
-        R();
+      controls.appendChild($("button",{cls:"vocab-flashcard-btn",css:"background:#eee;color:#555",onclick:function(){
+        screen="vocab";R();
       }},"Finalitzar"));
     }
-
     flashcardContainer.appendChild(controls);
   }
 
   scr.appendChild(flashcardContainer);
+}
+
+else if(screen==="verbs"&&vPr){
+  var pVerb=VERB_DATA[selectedVerb];
+  var pTense=TENSES.find(function(t){return t.id===gVTense;});
+  scr.appendChild($("div",{css:"display:flex;align-items:center;padding:16px 0;gap:12px"},[
+    $("button",{css:"background:none;border:none;font-size:22px;color:#555","aria-label":"Enrere",onclick:function(){vPr=null;R();}},"←"),
+    $("div",{css:"flex:1"},[$("div",{cls:"serif",css:"font-size:18px"},"🎯 Practicar: "+pVerb.ca),$("div",{css:"font-size:11px;color:#888"},pTense.name)]),
+    $("div",{css:"font-size:12px;color:#999"},Math.min(vPr.i+1,vPr.qs.length)+" / "+vPr.qs.length)]));
+  if(vPr.i>=vPr.qs.length){
+    var vpct=Math.round((vPr.sc/vPr.qs.length)*100);
+    scr.appendChild($("div",{cls:"quiz-complete"},[
+      $("div",{cls:"quiz-complete-icon"},vpct>=70?"🎉":"💪"),
+      $("div",{cls:"quiz-complete-score"},vpct+"%"),
+      $("div",{cls:"quiz-complete-message"},"Has encertat "+vPr.sc+" de "+vPr.qs.length+" formes"),
+      $("div",{css:"display:flex;gap:10px;justify-content:center"},[
+        $("button",{css:"padding:14px 24px;border-radius:14px;border:1px solid #ddd;background:#fff;font-size:15px;font-weight:600",onclick:function(){vPr=null;R();}},"← Tornar"),
+        $("button",{css:"padding:14px 24px;border-radius:14px;border:none;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:15px;font-weight:600",onclick:function(){startVerbPractice();R();}},"🔄 Repetir")])]));
+  }else{
+    var vq=vPr.qs[vPr.i];
+    scr.appendChild($("div",{cls:"quiz-question"},[
+      $("div",{cls:"quiz-question-lesson"},pVerb.ca+" · "+pTense.name),
+      $("div",{cls:"quiz-question-text"},vq.p),
+      vq.fr?$("div",{css:"font-size:14px;opacity:.85;margin-top:8px;font-style:italic"},vq.fr):null]));
+    vq.opts.forEach(function(o){
+      var isA=o===vq.a,isS=vPr.sel===o;
+      scr.appendChild($("button",{cls:"quiz-answer"+(vPr.sel!==null?(isA?" selected correct":(isS?" selected wrong":"")):""),lang:"ca",onclick:function(){
+        if(vPr.sel!==null)return;
+        vPr.sel=o;
+        if(o===vq.a)vPr.sc++;
+        R();
+        setTimeout(function(){vPr.sel=null;vPr.i++;R();window.scrollTo(0,0);},900);
+      }},o));
+    });
+  }
 }
 
 else if(screen==="verbs"){
@@ -841,7 +1095,7 @@ else if(screen==="verbs"){
 
       // Add row
       tableRows.appendChild($("div",{css:"font-size:14px;color:#666;text-align:right;font-weight:500"},catalanPronoun));
-      tableRows.appendChild($("div",{css:"font-size:16px;font-weight:700;color:"+(isIrregular?"#E74C3C":"#2A7B5B")},catalanForm));
+      tableRows.appendChild($("div",{lang:"ca",css:"font-size:16px;font-weight:700;cursor:pointer;color:"+(isIrregular?"#E74C3C":"#2A7B5B"),title:"Toca per escoltar",onclick:function(){speak(catalanPronoun.split("/")[0]+" "+catalanForm);}},catalanForm));
       tableRows.appendChild($("div",{css:"font-size:15px;color:#4A54C4;font-style:italic"},frenchDisplay));
     });
 
@@ -849,7 +1103,7 @@ else if(screen==="verbs"){
     scr.appendChild(conjugations);
 
     // Practice button
-    scr.appendChild($("button",{css:"width:100%;padding:14px;margin-top:16px;border-radius:12px;border:2px dashed #ddd;background:transparent;color:#999;font-size:14px;font-weight:600;transition:all .2s;cursor:pointer",onmouseover:function(){this.style.borderColor="#4A54C4";this.style.color="#4A54C4";this.style.background="#f8f8ff";},onmouseout:function(){this.style.borderColor="#ddd";this.style.color="#999";this.style.background="transparent";},onclick:function(){alert("Pràctica: Funció en desenvolupament!");}},"🎯 Practicar aquest temps verbal"));
+    scr.appendChild($("button",{css:"width:100%;padding:14px;margin-top:16px;border-radius:12px;border:2px dashed #ddd;background:transparent;color:#999;font-size:14px;font-weight:600;transition:all .2s;cursor:pointer",onmouseover:function(){this.style.borderColor="#4A54C4";this.style.color="#4A54C4";this.style.background="#f8f8ff";},onmouseout:function(){this.style.borderColor="#ddd";this.style.color="#999";this.style.background="transparent";},onclick:function(){startVerbPractice();R();}},"🎯 Practicar aquest temps verbal"));
   }
 }
 
@@ -876,10 +1130,10 @@ var nav=$("div",{cls:"nav"});
 });app.appendChild(nav);
 }
 </script>
-<script src="js/vocabulari-data.js"></script>
-<script src="js/text-vocabulary-data.js"></script>
-<script src="js/verb-conjugations.js"></script>
-<script src="js/expressions-data.js"></script>
+<script src="js/vocabulari-data.js?v=2"></script>
+<script src="js/text-vocabulary-data.js?v=2"></script>
+<script src="js/verb-conjugations.js?v=2"></script>
+<script src="js/expressions-data.js?v=2"></script>
 <script>
 R(); // initial render, after data scripts have loaded
 // Register service worker for PWA
