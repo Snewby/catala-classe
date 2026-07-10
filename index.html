@@ -119,7 +119,10 @@ input{font-family:inherit}
 .show-more-btn:hover{background:#f8f8ff}
 
 /* Verbs */
-.verb-header{display:flex;align-items:center;gap:10px;padding:12px 0;margin-bottom:12px}
+.verb-header{display:flex;flex-direction:column;gap:10px;padding:12px 0;margin-bottom:12px}
+.verb-search-row{display:flex;align-items:center;gap:10px}
+.verb-search-input{flex:1;padding:10px 16px;border:1px solid #ddd;border-radius:24px;font-size:14px;background:#f8f8f8;color:#333}
+.verb-search-input:focus{outline:none;border-color:#4ECDC4;background:#fff}
 .verb-selector{flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:12px;font-size:15px;font-weight:600;color:#333;background:#fff;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
 .verb-tense-tabs{display:flex;gap:3px;overflow-x:auto;margin-bottom:16px;background:#f5f5f5;border-radius:12px;padding:4px}
 .verb-tense-tab{padding:8px 14px;border-radius:8px;border:none;background:transparent;color:#666;font-size:12px;white-space:nowrap;font-weight:600;flex-shrink:0;transition:all .2s}
@@ -275,6 +278,7 @@ var qQs=[];
 var gTab="poss";
 var gVTense="pres";
 var selectedVerb=0;
+var verbQuery="";
 var flipped=false;      // lesson flashcard flip state
 var showBoth=false;     // show both sides of lesson flashcards
 var vocabQuery="";      // shared search query for vocab modes
@@ -1078,16 +1082,30 @@ else if(screen==="verbs"){
     return;
   }
 
-  // Header with verb selector
+  // Header with verb search + alphabetical selector
   var headerContainer=$("div",{cls:"verb-header"});
-  headerContainer.appendChild($("span",{css:"font-size:24px"},"🔤"));
+  var sortedVerbs=VERB_DATA.map(function(v,i){return {v:v,i:i};})
+    .sort(function(a,b){return a.v.ca.localeCompare(b.v.ca,"ca");});
   var selector=$("select",{cls:"verb-selector"});
-  VERB_DATA.forEach(function(v,i){
-    var opt=$("option",{value:i},v.ca+" - "+v.fr);
-    if(i===selectedVerb)opt.selected=true;
-    selector.appendChild(opt);
-  });
-  selector.onchange=function(){selectedVerb=parseInt(this.value);R();};
+  var fillVerbOptions=function(){
+    selector.innerHTML="";
+    var q=verbQuery.trim().toLowerCase();
+    var shown=0;
+    sortedVerbs.forEach(function(o){
+      if(q && o.v.ca.toLowerCase().indexOf(q)<0 && o.v.en.toLowerCase().indexOf(q)<0 && o.v.fr.toLowerCase().indexOf(q)<0)return;
+      shown++;
+      var opt=$("option",{value:o.i},o.v.ca+" - "+o.v.fr);
+      if(o.i===selectedVerb)opt.selected=true;
+      selector.appendChild(opt);
+    });
+    if(shown===0)selector.appendChild($("option",{value:selectedVerb},"Cap verb trobat"));
+  };
+  selector.onchange=function(){selectedVerb=parseInt(this.value);verbQuery="";R();};
+  var searchRow=$("div",{cls:"verb-search-row"});
+  searchRow.appendChild($("span",{css:"font-size:24px"},"🔤"));
+  searchRow.appendChild($("input",{cls:"verb-search-input",type:"text",placeholder:"🔍 Cerca un verb…",value:verbQuery,oninput:function(){verbQuery=this.value;fillVerbOptions();}}));
+  headerContainer.appendChild(searchRow);
+  fillVerbOptions();
   headerContainer.appendChild(selector);
   scr.appendChild(headerContainer);
 
