@@ -1087,12 +1087,14 @@ else if(screen==="verbs"){
   var sortedVerbs=VERB_DATA.map(function(v,i){return {v:v,i:i};})
     .sort(function(a,b){return a.v.ca.localeCompare(b.v.ca,"ca");});
   var selector=$("select",{cls:"verb-selector"});
+  // fold accents so "comencar" matches "començar", "etre" matches "être", etc.
+  var fold=function(s){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");};
   var fillVerbOptions=function(){
     selector.innerHTML="";
-    var q=verbQuery.trim().toLowerCase();
+    var q=fold(verbQuery.trim());
     var shown=0;
     sortedVerbs.forEach(function(o){
-      if(q && o.v.ca.toLowerCase().indexOf(q)<0 && o.v.en.toLowerCase().indexOf(q)<0 && o.v.fr.toLowerCase().indexOf(q)<0)return;
+      if(q && fold(o.v.ca).indexOf(q)<0 && fold(o.v.en).indexOf(q)<0 && fold(o.v.fr).indexOf(q)<0)return;
       shown++;
       var opt=$("option",{value:o.i},o.v.ca+" - "+o.v.fr);
       if(o.i===selectedVerb)opt.selected=true;
