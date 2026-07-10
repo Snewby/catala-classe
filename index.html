@@ -666,7 +666,7 @@ else if(screen==="vocab"){
         card.innerHTML='<span class="vocab-card-badge">NOU</span>';
       }
 
-      card.appendChild($("img",{cls:"vocab-card-img",src:v.img,alt:v.title}));
+      card.appendChild($("img",{cls:"vocab-card-img",src:v.img,alt:v.title,loading:"lazy",decoding:"async"}));
       var body=$("div",{cls:"vocab-card-body"});
       body.appendChild($("div",{cls:"vocab-card-title"},v.title));
       body.appendChild($("div",{cls:"vocab-card-subtitle"},v.subtitle));

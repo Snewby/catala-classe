@@ -1,0 +1,9 @@
+# Heavy source material kept locally, not in git
+Material/**/*.mp3
+Material/**/*.MP3
+Material/*.pdf
+Easy Catalan Podcast Extras/
+
+# OS cruft
+Thumbs.db
+.DS_Store
