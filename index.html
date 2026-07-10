@@ -30,7 +30,6 @@ input{font-family:inherit}
 /* Flashcards */
 .flashcard-container{position:relative;touch-action:pan-y}
 .flashcard-main{background:#fff;border-radius:20px;padding:40px 24px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:20px;border-top:3px solid var(--lesson-color);min-height:320px;display:flex;flex-direction:column;justify-content:center;transition:transform .3s}
-.flashcard-main.flipped{transform:rotateY(180deg)}
 .progress-dots{display:flex;justify-content:center;gap:6px;padding:12px 0;flex-wrap:wrap;max-height:60px;overflow:hidden}
 .progress-dot{width:8px;height:8px;border-radius:50%;background:#e0e0e0;transition:all .3s;cursor:pointer;border:none;padding:0}
 .progress-dot.active{background:var(--lesson-color);width:24px;border-radius:4px}
@@ -517,6 +516,7 @@ else if(screen==="flashcards"){
 }
 
 else if(screen==="quiz"){
+  if(qQs.length===0)buildQuiz(); // covers reloading straight into the persisted quiz screen
   // Quiz header with progress ring
   var header=$("div",{cls:"quiz-header"});
   var progressDiv=$("div",{cls:"quiz-progress"});
@@ -659,7 +659,7 @@ else if(screen==="vocab"){
     var filtered=typeof VOCABULARI!=='undefined'?(vocabSection==="all"?VOCABULARI:VOCABULARI.filter(function(v){return v.section===vocabSection;})):[];
 
     filtered.forEach(function(v,idx){
-      var card=$("div",{cls:"vocab-card",onclick:function(){vocabPage=v;screen="vocab-page";R();}});
+      var card=$("div",{cls:"vocab-card",onclick:function(){vocabPage=v;vocabScale=1;screen="vocab-page";R();}});
 
       // Add badge for new items (first 5)
       if(idx<5&&vocabSection==="all"){
