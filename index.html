@@ -1132,8 +1132,10 @@ else if(screen==="verbs"){
       var frenchPronoun=PRONOUN_MAP ? PRONOUN_MAP[catalanPronoun] : catalanPronoun;
       var frenchForm=frenchForms[frenchPronoun] || "—";
 
-      // Check if irregular
-      var isIrregular=verb.type && !verb.type.includes("regular");
+      // Check if irregular — regular conjugations have types starting with
+      // "regular" (e.g. "regular -ar"). Note "irregular".includes("regular")
+      // is true, so test the prefix instead.
+      var isIrregular=verb.type && verb.type.indexOf("regular")!==0;
 
       // Format French form with elision
       var frenchDisplay=frenchForm;
