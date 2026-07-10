@@ -123,6 +123,13 @@ input{font-family:inherit}
 .verb-search-row{display:flex;align-items:center;gap:10px}
 .verb-search-input{flex:1;padding:10px 16px;border:1px solid #ddd;border-radius:24px;font-size:14px;background:#f8f8f8;color:#333}
 .verb-search-input:focus{outline:none;border-color:#4ECDC4;background:#fff}
+.verb-results{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.verb-result{display:flex;flex-direction:column;gap:2px;padding:10px 14px;border:1px solid #eee;border-radius:12px;background:#fff;cursor:pointer}
+.verb-result:active{background:#f0f9f6}
+.verb-result.active{border-color:#2A7B5B;background:#f0f9f6}
+.verb-result-ca{font-weight:700;color:#2A7B5B;font-size:15px}
+.verb-result-tr{font-size:12px;color:#888}
+.verb-result-empty{padding:12px 14px;color:#999;font-size:14px;text-align:center}
 .verb-selector{flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:12px;font-size:15px;font-weight:600;color:#333;background:#fff;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
 .verb-tense-tabs{display:flex;gap:3px;overflow-x:auto;margin-bottom:16px;background:#f5f5f5;border-radius:12px;padding:4px}
 .verb-tense-tab{padding:8px 14px;border-radius:8px;border:none;background:transparent;color:#666;font-size:12px;white-space:nowrap;font-weight:600;flex-shrink:0;transition:all .2s}
@@ -1086,29 +1093,41 @@ else if(screen==="verbs"){
   var headerContainer=$("div",{cls:"verb-header"});
   var sortedVerbs=VERB_DATA.map(function(v,i){return {v:v,i:i};})
     .sort(function(a,b){return a.v.ca.localeCompare(b.v.ca,"ca");});
-  var selector=$("select",{cls:"verb-selector"});
   // fold accents so "comencar" matches "començar", "etre" matches "être", etc.
   var fold=function(s){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");};
-  var fillVerbOptions=function(){
-    selector.innerHTML="";
+  var loadVerb=function(i){selectedVerb=i;verbQuery="";R();};
+  var results=$("div",{cls:"verb-results"});
+  var renderResults=function(){
+    results.innerHTML="";
     var q=fold(verbQuery.trim());
-    var shown=0;
-    sortedVerbs.forEach(function(o){
-      if(q && fold(o.v.ca).indexOf(q)<0 && fold(o.v.en).indexOf(q)<0 && fold(o.v.fr).indexOf(q)<0)return;
-      shown++;
-      var opt=$("option",{value:o.i},o.v.ca+" - "+o.v.fr);
-      if(o.i===selectedVerb)opt.selected=true;
-      selector.appendChild(opt);
+    if(!q){
+      // No search: alphabetical dropdown to browse every verb
+      var selector=$("select",{cls:"verb-selector"});
+      sortedVerbs.forEach(function(o){
+        var opt=$("option",{value:o.i},o.v.ca+" - "+o.v.fr);
+        if(o.i===selectedVerb)opt.selected=true;
+        selector.appendChild(opt);
+      });
+      selector.onchange=function(){loadVerb(parseInt(this.value));};
+      results.appendChild(selector);
+      return;
+    }
+    var matches=sortedVerbs.filter(function(o){return fold(o.v.ca).indexOf(q)>=0||fold(o.v.en).indexOf(q)>=0||fold(o.v.fr).indexOf(q)>=0;});
+    if(matches.length===1){loadVerb(matches[0].i);return;} // single match: auto-load
+    if(matches.length===0){results.appendChild($("div",{cls:"verb-result-empty"},"Cap verb trobat"));return;}
+    matches.forEach(function(o){
+      var row=$("div",{cls:"verb-result"+(o.i===selectedVerb?" active":""),onclick:function(){loadVerb(o.i);}});
+      row.appendChild($("span",{cls:"verb-result-ca"},o.v.ca));
+      row.appendChild($("span",{cls:"verb-result-tr"},o.v.en+" · "+o.v.fr));
+      results.appendChild(row);
     });
-    if(shown===0)selector.appendChild($("option",{value:selectedVerb},"Cap verb trobat"));
   };
-  selector.onchange=function(){selectedVerb=parseInt(this.value);verbQuery="";R();};
   var searchRow=$("div",{cls:"verb-search-row"});
   searchRow.appendChild($("span",{css:"font-size:24px"},"🔤"));
-  searchRow.appendChild($("input",{cls:"verb-search-input",type:"text",placeholder:"🔍 Cerca un verb…",value:verbQuery,oninput:function(){verbQuery=this.value;fillVerbOptions();}}));
+  searchRow.appendChild($("input",{cls:"verb-search-input",type:"text",placeholder:"🔍 Cerca un verb…",value:verbQuery,oninput:function(){verbQuery=this.value;renderResults();}}));
   headerContainer.appendChild(searchRow);
-  fillVerbOptions();
-  headerContainer.appendChild(selector);
+  renderResults();
+  headerContainer.appendChild(results);
   scr.appendChild(headerContainer);
 
   var verb=VERB_DATA[selectedVerb];

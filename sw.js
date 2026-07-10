@@ -1,4 +1,4 @@
-const CACHE_NAME = 'catala-v5';
+const CACHE_NAME = 'catala-v6';
 const PRECACHE = [
   './',
   './index.html',
