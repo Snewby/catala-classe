@@ -1,11 +1,16 @@
-const CACHE_NAME = 'catala-v6';
+const CACHE_NAME = 'catala-v7';
+// The ?v= suffixes must match the <script src> attributes in index.html character for
+// character: the query string is part of the cache key, so a precache entry without it
+// never matches the request the page actually makes. Bump both together.
 const PRECACHE = [
   './',
   './index.html',
-  './js/vocabulari-data.js',
-  './js/text-vocabulary-data.js',
-  './js/verb-conjugations.js',
-  './js/expressions-data.js',
+  './js/vocabulari-data.js?v=2',
+  './js/text-vocabulary-data.js?v=2',
+  './js/verb-conjugations.js?v=3',
+  './js/expressions-data.js?v=2',
+  './js/dialogs-data.js?v=1',
+  './js/week-lessons-data.js?v=1',
   './assets/icons/android-icon-192x192.png',
   'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Sans+3:wght@300;400;600;700&display=swap'
 ];

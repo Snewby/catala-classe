@@ -4,6 +4,11 @@ Material/**/*.MP3
 Material/*.pdf
 Easy Catalan Podcast Extras/
 
+# Glossika newsletters: the .eml files embed a personal email address and
+# per-subscriber tracking tokens. Derived data lives in js/dialogs-data.js.
+glossikacatalan/
+glossikacatalan.zip
+
 # OS cruft
 Thumbs.db
 .DS_Store
