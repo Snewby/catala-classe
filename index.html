@@ -1422,7 +1422,10 @@ else if(screen==="gram"){
         scr.appendChild(sect("💬 "+g.g,box));
       });
       scr.appendChild(sect("🔤 Vocabulari ("+wk.voc.length+")",wkTable(wk.voc)));
-      scr.appendChild(sect("🔢 Nombres",wkTable(wk.num)));
+      var numBox=$("div",{});
+      numBox.appendChild(wkTable(wk.num));
+      if(wk.nnote)numBox.appendChild($("div",{css:"margin-top:12px;padding:10px 12px;background:#FFF8E1;border-radius:10px;font-size:12px;color:#795548;line-height:1.5",lang:"en"},wk.nnote));
+      scr.appendChild(sect("🔢 Nombres",numBox));
       var sitBox=$("div",{});wk.sit.forEach(function(it){sitBox.appendChild(wkRow(it));});
       scr.appendChild(sect("🗨️ Frases de situació",sitBox));
       var mdBox=$("div",{});wk.md.forEach(function(it){mdBox.appendChild(wkRow(it));});
@@ -1455,7 +1458,7 @@ var nav=$("nav",{cls:"nav","aria-label":"Navegació principal"});
 <script src="js/verb-conjugations.js?v=3"></script>
 <script src="js/expressions-data.js?v=2"></script>
 <script src="js/dialogs-data.js?v=1"></script>
-<script src="js/week-lessons-data.js?v=1"></script>
+<script src="js/week-lessons-data.js?v=2"></script>
 <script>
 R(); // initial render, after data scripts have loaded
 // Register service worker for PWA
